@@ -1,0 +1,3 @@
+BaseBaseWatsonSemispace
+BaseBaseWatsonMarkSweep
+BaseAdaptiveWatsonSemispace -test-list nightly-tests-short

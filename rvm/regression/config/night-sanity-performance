@@ -1,0 +1,4 @@
+FastWatsonSemispace -test-list nightly-tests-performance
+FastWatsonMarkSweep -test-list nightly-tests-performance
+FastAdaptiveWatsonSemispace -test-list nightly-tests-performance
+FastAdaptiveSemiSpace -test-list nightly-tests-performance
