@@ -1,0 +1,488 @@
+#!/bin/ksh
+#
+# (C) Copyright IBM Corp. 2001
+#
+# $Id$
+#
+# Build and test various configurations of RVM virtual machine.
+#
+# Invocation: RunSanityTests [-help|...]
+#
+# @author Derek Lieber
+# @date 09 Mar 2000 
+#
+# @modified by Steve Fink
+# @modified by Mike Hind, June 2, 2000
+# @modified by Peter F. Sweeney
+#     Passes the correct runtime arguments to adaptive and nonadaptive systems.
+# @modified by Julian Dolby (9/27/01)
+#     heavily rewritten
+
+# sigh
+#
+ulimit -c 0
+
+# intitialization
+#
+total_tests=0
+passed_tests=0
+
+# How often to look to see if the builds are done
+SLEEP_DURATION="120"
+
+# Who am I?
+#
+ME=`basename $0`
+
+# Place where configuration generator resides.
+#
+GENERATOR=$RVM_ROOT/rvm/bin
+
+# Default place where generated boot images and runtime files will reside.
+#
+if [[ ! -z "$RVM_SANITY" ]]; then
+   GENERATED_IMAGES=$RVM_SANITY
+else
+   GENERATED_IMAGES=$HOME/RVMSanityTests
+fi
+
+# Build images by default
+#
+BUILD="Yes"
+
+# Clean before running tests by default
+#
+CLEAN="Yes"
+
+# Run tests by default
+#
+RUN="Yes"
+
+# Run on 2 nodes by default
+#
+NUM_PROCS_LIST=2
+
+## Quiet by default
+#
+VERBOSE=NO
+
+## Do all tests by default
+#
+TEST_LIST=`cat $RVM_ROOT/rvm/regression/config/nightly-tests`
+
+## Default configurations
+#
+CONFIG_LIST="BaseBaseSemispace BaseBaseMarkSweep BaseBaseCopyGenVariable FullOptMarkSweep FullOptCopyGenVariable FullAdaptiveSemispace FastAdaptiveSemispace ExtremeAssertionsOptOptSemispace"
+
+# help message of usage options
+#
+function showHelp {
+  echo 'valid options:'
+  echo '-images <dir>               where to put generated images'
+  echo '-result <root dir>          where to put results of tests'
+  echo '-test[s] "<tests>"            list of tests to run'
+  echo '-test-list <file>           file listing tests to run'
+  echo '-nobuild                    do not build boot images'
+  echo '-noclean                    do not clean when running tests'
+  echo '-norun                      do not run any tests'
+  echo '-numprocs "<n1> <n2> ..."   use listed numbers of virtual processors'
+  echo '-use-opt-levels <levels>    run tests with all opt levels in list'
+  echo '-configuration[s] "<configs>" test all boot images in list'
+  echo '-configuration-list <file>  file listing boot images to test'
+  echo '-wait <file>                sync build and run using file'
+  echo '-performance <file>         record performance results to file'
+  echo '-rc-args "args"             supply args to all runs'
+  echo '-config-args "args"         supply args to jconfigure'
+  echo '-minimal                    run minimal test suite on OptOptSemispace image'
+  echo '-verbose                    produce lots of output'
+  echo '-help                       display this message'
+}
+
+#
+# Users can override defaults 
+# 
+while [ $# != 0 ]; do
+
+  case $1 in
+
+    # Place where generated boot images and runtime files will reside.
+    #
+    -images)
+	GENERATED_IMAGES=$2
+	shift
+    ;;
+
+    ## Should we put test results somewhere besides the shadow?
+    #
+    -result)
+	RESULT=$2
+	shift
+    ;;
+
+    ## Should we run only the specific tests?
+    # 
+    -test)
+	TEST_LIST=$2
+	shift
+    ;;
+    -tests)
+	TEST_LIST=$2
+	shift
+    ;;
+
+    ## Should we run only the specific tests?
+    # 
+    -test-list)
+        case $2 in
+	/*)
+	  TEST_LIST=`cat $2`
+        ;;
+
+	*)
+	  TEST_LIST=`cat $RVM_ROOT/rvm/regression/config/$2`
+	;;
+	esac
+	shift
+    ;;
+
+    ## Should we avoid building the boot image again?
+    # 
+    -nobuild)
+	BUILD="No"
+    ;;
+
+    ## Should we avoid cleaning the shadow?
+    # 
+    -noclean)
+	CLEAN="No"
+    ;;
+
+    ## Should we not run any tests?
+    # 
+    -norun)
+	RUN="No"
+   ;;
+
+   ## Set the number of processors to use
+   # 
+   -numprocs)
+	NUM_PROCS_LIST=$2
+	shift
+   ;;
+
+    ## be verbose
+    # 
+    -verbose)
+	VERBOSE=YES
+   ;;
+
+   ## use multiple opt. levels for running tests?
+   #
+   -use-opt-levels)
+	OPT_LEVELS=$2
+	shift
+   ;;
+
+   ## test given configurations
+   #
+   -configurations)
+	CONFIG_LIST=$2
+	shift
+   ;;
+   -configuration)
+	CONFIG_LIST=$2
+	shift
+   ;;
+
+   ## test given configurations
+   #
+   -configuration-list)
+        case $2 in
+	/*)
+	  CONFIG_LIST=`cat $2`
+        ;;
+	*)
+	  CONFIG_LIST=`cat $RVM_ROOT/rvm/regression/config/$2`
+        ;;
+        esac
+	shift
+   ;;
+
+   ## print usage help
+   #
+   -wait)
+	WAIT=$2
+	shift
+   ;;
+
+   ## print usage help
+   #
+   -performance)
+	PERFORMANCE=$2
+	shift
+   ;;
+
+   ## RC_ARGS to supply
+   #
+   -rc-args)
+	EXTRA_RC_ARGS=$2
+	shift
+   ;;
+
+   ## args to jconfigure
+   #
+   -config-args)
+	EXTRA_CONFIG_ARGS=$2
+	shift
+   ;;
+
+   ## set up to run a minimal test suite on OptOptSemispace
+   #
+   -minimal)
+	CONFIG_LIST=OptOptSemispace
+        TEST_LIST=`cat $RVM_ROOT/rvm/regression/config/small-sanity-tests`
+   ;;
+
+   ## print usage help
+   #
+   -help)
+	showHelp
+	exit 0
+   ;;
+
+   ## Anything else is an error
+   #
+   *)
+	echo Unknown argument: $1
+	showHelp
+	exit -1
+   ;;
+
+   esac
+   shift
+done
+
+#
+# Default optimization controls for adaptive and nonadaptive configurations
+#
+DEFAULT_ADAPTIVE_RC_ARGS="-X:aos:opt:errors_fatal=true"
+DEFAULT_NONADAPTIVE_OPT_RC_ARGS="-X:irc:errors_fatal=true"
+
+# Name of current configuration being tested.
+#
+NAME="NoName"
+
+# Emit a message.
+#
+function say
+   {
+   echo "$ME: $*"
+   }
+
+# Select a configuration to be built and tested.
+#
+function setConfiguration
+   {
+     NAME=$1$2
+
+   # environment variable for use by "jconfigure" and "rvm" commands
+   export RVM_BUILD=$GENERATED_IMAGES/$1
+
+   }
+
+
+
+# Build a virtual machine.
+#
+function doBuild
+   {
+   if [[ $BUILD = "Yes" ]]; then
+     say "creating $NAME"
+     $GENERATOR/jconfigure $EXTRA_CONFIG_ARGS $NAME </dev/null
+
+     if [[ $CLEAN = "Yes" ]]; then
+        say "cleaning shadow"
+        cd $RVM_BUILD && jbuild -clean
+     fi
+
+     say "building $NAME"
+     cd $RVM_BUILD && jbuild -trace >RVM.trace 2>&1
+
+     if [[ x$WAIT != x ]]; then
+       # Leave a marker to signify the building is done.
+       echo "You may remove this file" > $RVM_BUILD/$WAIT
+     fi
+   else 
+     if [[ x$WAIT != x ]]; then
+       while [[ ! -a $RVM_BUILD/$WAIT ]]; do
+         sleep $SLEEP_DURATION;
+       done
+     fi
+   fi
+   }
+
+# Run a test.
+# We impose a time limit to ensure that additional tests can proceed if this one hangs.
+#
+function doRun
+   {
+   if [[ $RUN = "Yes" ]]; then
+     # special arguments:
+     # JAVA_PACKAGES is for use by "toba" test
+     # RVMPATH       is for use by "ExecuteOptCode" tests !!TODO: clean this up by using "JCOMPILE:=$(RVM_BUILD)/jbuild.tool" line in Makefiles [--DL]
+     
+     # Determine which set of runtime arguments to pass
+     case $NAME in
+       *Adaptive* ) export RC_ARGS=$DEFAULT_ADAPTIVE_RC_ARGS ;;
+       @(@(Base|Opt|Fast|Full|ExtremeAssertionsOpt)Opt*|FastMarkSweep|FastSemispace)  ) 
+	export RC_ARGS=$DEFAULT_NONADAPTIVE_OPT_RC_ARGS
+        # use opt. level, if requested
+        if [ x$OPT_LEVEL != x ]; then
+	     RC_ARGS="$RC_ARGS -X:irc:$OPT_LEVEL"
+	   else 
+	     RC_ARGS="$RC_ARGS -X:irc:O3"
+           fi
+        ;;
+       * ) # baseline must be the runtime compiler - no default options yet
+        ;;
+     esac
+
+     # start test running
+     say "start $NAME in `pwd` at `date \"+%m/%d/%Y %T\"`"
+
+     # Supply a result dir
+     if [ x$RESULT = x ]; then
+       RESULT="$RVM_BUILD/sanity" 
+     fi
+     TEST_RESULT_DIR=`pwd | sed -e "s@$RVM_ROOT@@"`
+     RESULT_STR="WORKING=$RESULT/$TEST_RESULT_DIR"
+     echo Results to $RESULT/$TEST_RESULT_DIR
+
+     # gather performance data, if appropriate
+     if [ x$PERFORMANCE != x ]; then
+	PERFORMANCE_STR="MODE=PERFORMANCE PERF_LOG=$PERFORMANCE"
+	LIMIT=`expr 2700 '*' $NUM_PROCS`
+	echo "Performance mode: results to $PERFORMANCE"
+     else
+	LIMIT=`expr 1800 '*' $NUM_PROCS`
+	PERFORMANCE_STR=
+    fi
+
+    # pass on opt. level information, if given
+    if [ x$OPT_LEVEL != x ]; then
+	OPT_STR=".OPT_LEVEL=$OPT_LEVEL"
+    else
+	OPT_STR=
+    fi
+
+    # suffix output files to distinguish multiple options
+    if [ x$OPT_LEVEL != x ]; then
+	if [ x$NUM_PROCS != x ]; then
+	    SUFFIX=".${OPT_LEVEL}.${NUM_PROCS}proc"
+	else
+	    SUFFIX=".${OPT_LEVEL}"
+	fi
+    else
+	if [ x$NUM_PROCS != x ]; then
+	    SUFFIX=".${NUM_PROCS}proc"
+	else
+	    SUFFIX=
+	fi
+    fi
+
+    if [ x$VERBOSE = xYES ]; then
+	FLAGS="-k"
+    else
+	FLAGS="-ks"
+    fi
+
+    . $RVM_BUILD/environment
+    $RVM_ROOT/rvm/regression/limited.ksh $LIMIT $GNU_MAKE $FLAGS \
+	   BOOTNAME=$NAME $OPT_STR $RESULT_STR $PERFORMANCE_STR \
+           JBOOT=$RVM_ROOT/rvm/bin/rvm\
+	   SUFFIX=$SUFFIX \
+           PROCESSORS="$NUM_PROCS"\
+           RC_ARGS="$RC_ARGS $EXTRA_RC_ARGS"\
+           JAVA_PACKAGES=$RVM_BUILD/RVM.classes\
+           RVMPATH=$RVM_BUILD/RVM.classes:$RVM_BUILD/RVM.classes/rvmrt.jar \
+           clean sanity 
+
+    # record status
+    test_status=$?
+    total_tests=`expr $total_tests + 1`
+    if [ test_status -eq 0 ]; then 
+       passed_tests=`expr $passed_tests + 1`
+    else
+       say "$NAME: You are NOT sane in `pwd`"
+    fi
+
+    # done
+    say "end $NAME in `pwd` at `date \"+%m/%d/%Y %T\"`"
+
+    # allow process termination messages to finish printing before proceeding to next test
+    sleep 1
+
+   fi
+   }
+
+
+# Build and test: more detailed.
+#
+function doTests {
+   if (fgrep -q RVM_FOR_SINGLE_VIRTUAL_PROCESSOR=1 $RVM_BUILD/RVM.configuration)
+   then
+     echo "Ignoring -numprocs for single processor image"
+     NUM_PROCS=1
+     for test in $TEST_LIST; do
+       cd $RVM_ROOT/rvm/regression/tests/$test && doRun
+     done
+   else
+     for NUM_PROCS in $NUM_PROCS_LIST; do
+       for test in $TEST_LIST; do
+         cd $RVM_ROOT/rvm/regression/tests/$test && doRun
+       done
+     done
+   fi
+}
+   
+function doOptLevelTests {
+    for OPT_LEVEL in $OPT_LEVELS; do
+	doTests
+    done
+}
+
+function runTests {
+    doBuild
+    if [ "x$OPT_LEVELS" != x ]; then
+	doOptLevelTests
+    else
+	doTests
+    fi
+}
+
+# Build and test a series of configurations.
+#
+function main {
+  for config in $CONFIG_LIST; do
+    setConfiguration $config; time runTests
+  done
+
+  if [ total_tests != 0 ]; then
+     say "$total_tests tests run"
+     say "$passed_tests tests passed"
+  fi
+
+  if [ x$PERFORMANCE != x ]; then
+    say "Performance Summary"
+    $AWK -f $RVM_ROOT/rvm/regression/PerformanceBottomLine.awk < $PERFORMANCE
+  fi
+
+  say "done"
+}
+
+# Kill entire process group if someone types a ctl-c.
+# This ensures that subshells spawned by make die quickly.
+#
+trap "say bye!; /bin/kill -KILL -$$ 2>/dev/null" INT
+
+time main $*

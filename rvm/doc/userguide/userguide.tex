@@ -1,0 +1,281 @@
+\documentclass{article}
+\usepackage{hyperlatex}
+\usepackage{epsfig}
+\usepackage{xspace}
+\usepackage{verbatim}
+\usepackage{makeidx}
+\W\usepackage{longtable}
+\W\usepackage{jframes}
+
+\T \newcommand{\trademark}{\ }
+\W \newcommand{\trademark}{\xmlsym{##8482}\ }
+
+\newcommand{\JikesTMFootnote}{{\texonly \texttrademark}{\htmlonly
+\trademark}\texonly{\footnote{{\bf Jikes} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}}}
+
+\newcommand{\JikesTMFooter}{\W \hline \small {\bf Jikes} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}
+
+\newcommand{\AIXTMFootnote}{{\texonly \texttrademark}{\htmlonly
+\trademark}\texonly{\footnote{{\bf AIX} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}}}
+
+\newcommand{\AIXTMFooter}{\W \hline \small {\bf AIX} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}
+
+\newcommand{\PowerPCTMFootnote}{{\texonly \texttrademark}{\htmlonly
+\trademark}\texonly{\footnote{{\bf PowerPC} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}}}
+
+\newcommand{\PowerPCTMFooter}{\W \hline \small {\bf PowerPC} is a
+trademark or registered trademark of International Business Machines
+Corporation in the United States, other countries, or both.}
+
+\newcommand{\JavaTMFootnote}{{\texonly {\texttrademark}}{\htmlonly
+\trademark}\texonly{\footnote{\small {\bf Java} and all Java-based
+trademarks and 
+logos are trademarks or registered trademarks of Sun Microsystems,
+Inc.\ in the United States, other countries, or both.}}}
+
+\newcommand{\JavaTMFooter}{\W \hline \small {\bf Java} and all Java-based trademarks and
+logos are trademarks or registered trademarks of Sun Microsystems,
+Inc.\ in the United States, other countries, or both.}
+
+
+
+%Define macros
+%%  Releases
+%%     Jan, 2001: 1.0, 1.0a
+%%     Apr, 2001: 1.1
+%%     Oct, 2001: 2.0.0
+%%     Nov, 2001: 2.0.1
+%%     Jan, 2002: 2.0.2
+\newcommand{\version}{2.0.2}
+\newcommand{\jp}{Jalape\~{n}o}
+\newcommand{\jrvm}{Jikes RVM}
+\newcommand{\ignore}[1]{{}}
+\newcommand{\spec}{SPECjvm98}
+
+\newcommand{\RVMTarFile}{jikesrvm-{\version}.tar.gz}
+\newcommand{\LibTarFile}{jlibraries-{\version}.tar.gz}
+
+%Define URLs
+\newcommand{\RVMHomeURL}{http://www.ibm.com/developerworks/oss/jikesrvm}
+\newcommand{\JalapenoHomeURL}{http://www.research.ibm.com/jalapeno}
+\newcommand{\QandAURL}{{\RVMHomeURL}/info/overview.shtml}
+\newcommand{\RVMPubsURL}{{\JalapenoHomeURL}/publication.html}
+\newcommand{\RVMUserGuideURL}{{\RVMHomeURL}/userguide/HTML/userguide.html}
+\newcommand{\RVMJavadocURL}{{\RVMHomeURL}/api}
+\newcommand{\RVMDownloadURL}{http://www-124.ibm.com/developerworks/projects/jikesrvm}
+\newcommand{\RVMCVSURL}{\RVMDownloadURL}
+\newcommand{\RVMLibBinaryLicenseURL}{http://www-124.ibm.com/cgi-bin/jikesrvm/jlibraries}
+\newcommand{\RVMLibSourceLicenseURL}{http://www-124.ibm.com/cgi-bin/jikesrvm/jlibsource}
+\newcommand{\RVMUserListURL}{{\RVMHomeURL}/info/users.shtml}
+\newcommand{\RVMResearcherMailingListURL}{{\RVMDownloadURL}}
+\newcommand{\RVMBugURL}{\RVMDownloadURL}
+\newcommand{\CPLURL}{http://oss.software.ibm.com/developerworks/opensource/license-cpl.html}
+\newcommand{\IBMURL}{http://www.ibm.com}
+\newcommand{\WatsonURL}{http://www.watson.ibm.com}
+\newcommand{\SPECURL}{http://www.spec.org}
+
+\newcommand{\OPTCompilationPlanURL}{{\RVMJavadocURL}/OPT\_CompilationPlan.html}
+\newcommand{\OPTCompilerPhaseURL}{{\RVMJavadocURL}/OPT\_CompilerPhase.html}
+\newcommand{\OPTDefUseURL}{{\RVMJavadocURL}/OPT\_DefUse.html}
+\newcommand{\OPTGenerateMagicURL}{{\RVMJavadocURL}/OPT\_GenerateMagic.html}
+\newcommand{\OPTGenerateMachineSpecificMagicURL}{{\RVMJavadocURL}/OPT\_GenerateMachineSpecificMagic.html}
+\newcommand{\OPTInlinerURL}{{\RVMJavadocURL}/OPT\_Inliner.html}
+\newcommand{\OPTInsertInstructionCountersURL}{{\RVMJavadocURL}/OPT\_InsertInstructionCounters.html}
+\newcommand{\OPTInsertMethodInvocationCounterURL}{{\RVMJavadocURL}/OPT\_InsertMethodInvocationCounter.html}
+\newcommand{\OPTInsertYieldpointCountersURL}{{\RVMJavadocURL}/OPT\_InsertYieldpointCounters.html}
+\newcommand{\OPTInstrumentedEventCounterManagerURL}{{\RVMJavadocURL}/OPT\_InstrumentedEventCounterManager.html}
+\newcommand{\OPTInstructionURL}{{\RVMJavadocURL}/OPT\_Instruction.html}
+\newcommand{\OPTOptimizationPlanElementURL}{{\RVMJavadocURL}/OPT\_OptimizationPlanElement.html}
+\newcommand{\OPTOptimizationPlannerURL}{{\RVMJavadocURL}/OPT\_OptimizationPlanner.html}
+\newcommand{\OPTRegisterURL}{{\RVMJavadocURL}/OPT\_Register.html}
+\newcommand{\OPTSSAURL}{{\RVMJavadocURL}/OPT\_SSA.html}
+\newcommand{\OPTSimpleEscapeURL}{{\RVMJavadocURL}/OPT\_SimpleEscape.html}
+\newcommand{\VMAbstractThreadQueueURL}{{\RVMJavadocURL}/VM\_AbstractThreadQueue.html}
+\newcommand{\VMAOSDatabaseURL}{{\RVMJavadocURL}/VM\_AOSDatabase.html}
+\newcommand{\VMCallbacksURL}{{\RVMJavadocURL}/VM\_Callbacks.html}
+\newcommand{\VMClassURL}{{\RVMJavadocURL}/VM\_Class.html}
+\newcommand{\VMCounterArrayManagerURL}{{\RVMJavadocURL}/VM\_CounterArrayManager.html}
+\newcommand{\VMGCLocksURL}{{\RVMJavadocURL}/VM\_GCLocks.html}
+\newcommand{\VMGCWorkQueueURL}{{\RVMJavadocURL}/VM\_GCWorkQueue.html}
+\newcommand{\VMIdleThreadURL}{{\RVMJavadocURL}/VM\_IdleThread.html}
+\newcommand{\VMInstrumentationURL}{{\RVMJavadocURL}/VM\_Instrumentation.html}
+\newcommand{\VMInstrumentedControlFlowEdgeCounterDataURL}{{\RVMJavadocURL}/VM\_InstrumentedControlFlowEdgeCounterData.html}
+\newcommand{\VMLockURL}{{\RVMJavadocURL}/VM\_Lock.html}
+\newcommand{\VMMagicURL}{{\RVMJavadocURL}/VM\_Magic.html}
+\newcommand{\VMMagicCompilerURL}{{\RVMJavadocURL}/VM\_MagicCompiler.html}
+\newcommand{\VMManagedCounterDataURL}{{\RVMJavadocURL}/VM\_ManagedCounterData.html}
+\newcommand{\VMMethodURL}{{\RVMJavadocURL}/VM\_Method.html}
+\newcommand{\VMMethodInvocationCounterDataURL}{{\RVMJavadocURL}/VM\_MethodInvocationCounterData.html}
+\newcommand{\VMProcessorURL}{{\RVMJavadocURL}/VM\_Processor.html}
+\newcommand{\VMProcessorLockURL}{{\RVMJavadocURL}/VM\_ProcessorLock.html}
+\newcommand{\VMProxyURL}{{\RVMJavadocURL}/VM\_Proxy.html}
+\newcommand{\VMStringCounterEventDataURL}{{\RVMJavadocURL}/VM\_StringCounterEventData.html}
+\newcommand{\VMStringEventCounterDataURL}{{\RVMJavadocURL}/VM\_StringEventCounterData.html}
+\newcommand{\VMSynchronizationURL}{{\RVMJavadocURL}/VM\_Synchronization.html}
+\newcommand{\VMThreadURL}{{\RVMJavadocURL}/VM\_Thread.html}
+\newcommand{\VMUninterruptibleURL}{{\RVMJavadocURL}/VM\_Uninterruptible.html}
+\newcommand{\VMYieldpointCounterDataURL}{{\RVMJavadocURL}/VM\_YieldpointCounterData.html}
+
+\newcommand{\PPCStackframeLayoutURL}{{\RVMJavadocURL}/finishURL}
+\newcommand{\LintelStackframeLayoutURL}{{\RVMJavadocURL}/finishURL}
+
+\newcommand{\PPCRegisterConstantsURL}{{\RVMJavadocURL}/finishURL}
+\newcommand{\LintelRegisterConstantsURL}{{\RVMJavadocURL}/finishURL}
+
+\newcommand{\gnuMakeURL}{http://www.gnu.org/software/make/make.html}
+\newcommand{\gnuTarURL}{http://www.gnu.org/software/tar/tar.html}
+\newcommand{\jikesURL}{http://oss.software.ibm.com/developerworks/opensource/jikes}
+\newcommand{\HyperlatexURL}{http://www.cs.ruu.nl/\~{}otfried/Hyperlatex/}
+\newcommand{\AIXJdkURL}{http://www.ibm.com/java/jdk/aix/index.html}
+\newcommand{\LinuxJdkURL}{http://www.ibm.com/java/jdk/aix/index.html}
+\newcommand{\CygwinURL}{http://www.cygwin.com}
+\newcommand{\WinJdkURL}{http://www.ibm.com/java/jdk/}
+\newcommand{\pdkshURL}{http://www.cs.mun.ca/\~{}michael/pdksh}
+\newcommand{\SystemJournalPaperURL}{{\RVMPubsURL}\#ibmsj00}
+\newcommand{\JavaGrandePaperURL}{{\RVMPubsURL}\#grande99}
+\newcommand{\OOPSLAPaperURL}{{\RVMPubsURL}\#oopsla00\_aos}
+\newcommand{\EscapeAnalysisPaperURL}{{\RVMPubsURL}\#oopsla99\_escape}
+\newcommand{\SASPaperURL}{{\RVMPubsURL}\#sas00}
+\newcommand{\ABCDPaperURL}{{\RVMHomeURL}\#ABCD}
+\newcommand{\SunCodeConventionURL}{http://java.sun.com/docs/codeconv}
+\newcommand{\JavadocURL}{http://java.sun.com/j2se/javadoc/index.html}
+\newcommand{\VimURL}{http://www.vim.org}
+\newcommand{\jazzlibURL}{http://jazzlib.sourceforge.net}
+\newcommand{\DejavuURL}{{\JalapenoHomeURL}/dejavu/index.html}
+\newcommand{\QuicksilverURL}{http://www.research.ibm.com/people/g/gupta/oopsla00.ps}
+
+%% Html declarations: Output directory and filenames, node title
+%\htmlcss{http://www.w3.org/StyleSheets/Core/Steely}
+\htmltitle{The Jikes\trademark Research Virtual Machine User's Guide}
+\W \htmldirectory{HTML}
+\W \renewcommand{\HlxIcons}{}
+\W \renewcommand{\htmlpanelfield}[3][\link]{\HlxAppend{\HlxPanelFields}%
+  {\xml*{td bgcolor="###99ccff" align="center"}%
+    #1{#2}{#3}\xml*{/td}}}
+\W \htmlpanelfield[\xlink]{Home}{http://www-124.ibm.com/developerworks/oss/jikesrvm" target="_top}
+\W \htmlpanelfield[\xlink]{Project}{http://www-124.ibm.com/developerworks/projects/jikesrvm" target="_top}
+\W \htmlpanelfield{\contentsname}{hlxtoc}
+\W \htmlpanelfield{\indexname}{hlxindex}
+%\setcounter{secnumdepth}{3}
+\setcounter{htmldepth}{3}
+\xmlattributes{table}{border}
+%\xmlattributes{ul}{compact}
+\xmlattributes{body}{bgcolor="#eeeeee"}
+\xmlattributes{a}{style="text-decoration: none"}
+
+\W\begin{iftex}
+\sloppy
+%% These definitions work reasonably for A4 and letter paper
+\oddsidemargin 0mm
+\evensidemargin 0mm
+\topmargin 0mm
+\textwidth 15cm
+\textheight 22cm
+\advance\textheight by -\topskip
+\count255=\textheight\divide\count255 by \baselineskip
+\textheight=\the\count255\baselineskip
+\advance\textheight by \topskip
+\W\end{iftex}
+
+
+% Use \remark{...text...} to add a remark (todo item).
+\T \input{remark}
+\T \remarktrue
+\W \newcommand{\remark}[1]{}
+
+
+\title{\texonly{\vfill} {\huge The Jikes\JikesTMFootnote\ Research Virtual
+Machine
+\\
+User's Guide} \\ {\huge v\version} \\ { } \texonly{\vfill} }
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+\date{}
+
+\T \JikesTMFooter
+
+\T \newpage
+\label{hlxtoc}
+\T \tableofcontents
+\T \listoffigures
+\W \htmlmenu{6}
+
+\W \JikesTMFooter
+
+\T \newpage
+\section{Introduction}
+\input{intro}
+
+\T \newpage
+\section{Installation Guide} \label{section:installation}
+\input{installation}
+
+\T \newpage
+\section{Running RVM} \label{section:running}
+\input{running}
+
+\T \newpage
+\section{Runtime Implementation Details}
+\input{vmdetails}
+
+\T \newpage
+\section{Optimizing Compiler Implementation Details}
+\label{section:optdetails}
+\input{optdetails}
+
+\T \newpage
+\section{Memory Management Details}
+\input{mmdetails}
+
+\T \newpage
+\section{JDP: the \jrvm\ debugger}
+\input{jdp}
+
+\T \newpage
+\section{Using the \jrvm\ to Profile an Application}
+\input{profiling}
+
+\T \newpage
+\section{Experimental Guidelines}
+\input{performance}
+
+\T \newpage
+\section{Coding Style Guidelines}
+\input{codingstyle}
+
+\T \newpage
+\section{FAQ}
+\input{faq}
+
+\T \newpage
+\section*{Acknowledgements}
+\input{ack}
+
+\T \newpage
+\T \bibliographystyle{abbrv}
+\T \bibliography{main}
+
+\T \newpage
+\section{Appendix A: RVM command-line directives}
+\label{appendix:nonadaptive:cmdline}
+\input{cmdline}
+
+\xname{userguide_index}
+\W \section*{\indexname}\label{hlxindex}
+\W \htmlprintindex
+\T \printindex
+\end{document}

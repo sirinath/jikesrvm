@@ -1,0 +1,203 @@
+This Section provides additional information on the implementation
+of the memory management component of RVM runtime system.
+ 
+\subsection{Directory Structure} \label{sssec:directories}
+The classes related to memory management are contained in the 
+{\tt \$RVM\_ROOT/rvm/src/vm/memoryManagers} directory.
+The {\tt watson} sub-directory of {\tt memoryManagers} contains
+the memory managers provided with the initial release of the RVM,
+and are the managers discussed in this section.
+
+The {\tt watson} directory contains common classes used by multiple
+memory managers, such as the load balancing work queue
+(see 
+\xlink{{\tt VM\_GCWorkQueue.java}}{\VMGCWorkQueueURL}
+).
+Sub-directories of {\tt watson} 
+contain classes for a specific memory management strategy.
+For example, the {\tt semispace} directory implements a
+simple semi-space copying allocator and collector.
+
+A RVM configuration specifies a memory management strategy, 
+and the jconfigure command will include in the build all the
+classes in the {\tt memoryManagers/watson} directory and all the classes in the
+sub-directory for the specified memory management strategy.
+
+\subsection{Choosing an Allocator/Collector} \label{ssec:choosinggc}
+Depending on your purposes, you may choose to build RVM
+with a semispace copying, mark-sweep noncopying, or hybrid collector.
+For programs which do not perform many collections, the
+copying collector will most likely perform best, since object
+allocation path lengths are shortest for this collector.  To
+minimize garbage collection delays, the hybrid collector may
+be used, since it allows a small nursery for which minor collections
+can be quite fast, and major collections are noncopying.  
+
+Generally, the mark-sweep noncopying
+collector requires smaller heap storage for a given application	
+than any of the copying collectors, which in have a semispace structure.
+Also, major collections are faster with a noncopying collector,
+since objects are not moved.  The best performance for a particular	
+application should be determined by experiment.
+
+All of the memory managers provided in the {\tt watson} directory,
+except for the concurrent (reference counting) collector, support
+finalization, and collection while threads are executing in 
+native code (such threads are blocked in native code during collection).
+
+\subsection{Adding A New Allocator/Collector} \label{sssec:newalloc}
+\index{garbage collection}
+\index{stop-the-world garbage collection}
+It is not difficult to add your own Allocator/Collector to RVM,
+especially if it uses the same ``stop the world'' parallel collection
+strategy used by all the collectors in this release.  The basic steps
+are:
+\index{jconfigure script}
+\index{VM\_Allocator class}
+\begin{enumerate}
+\item Create a new directory for the Allocator/Collector, such as ``newGC''.
+\item Add a new configuration in {\tt \$RVM\_ROOT/rvm/config/build}
+which includes your new directory in the build.  Name it appropriately, such as
+``BaseBasenewGC''.
+\item Copy some existing {\tt VM\_Allocator.java} file into your new directory,
+and modify it, choosing one that has similar properties, such as copying or
+non-copying.  If you want to start from scratch, start with 
+{\tt VM\_Allocator} in noGC.
+This file provides simple implementations of the required object allocation
+methods, and stubs for the other fields and methods expected by the rest
+of the RVM runtime (not all will be needed in any one implementation).
+With the initial set of memory managers, a single class, VM\_Allocator, implements both
+the methods that perform object allocation and the methods that perform
+garbage collections.
+\end{enumerate}
+
+\subsection{Load Balancing Work Queue} \label{sssec:workqueue}
+\index{VM\_GCWorkQueue class}
+\index{finalizable objects}
+\index{finalizer method}
+The class {\tt VM\_GCWorkQueue}, implements a load balancing workqueue
+which is used by all the collectors to find all references reachable from
+some initial set of references.  It is used to find all objects reachable
+from roots, and also to find all objects reachable from finalizable objects
+that are made live in order to execute their finalizer methods.
+
+The work queue is implemented using thread local ``get'' and ``put'' buffers
+and a shared pool of buffers needing to be processed.  The performance of the
+work queue is affected by the size of these buffers.  The default size is 1024 
+entries, but can be altered by the command line argument ``-X:wbsize=nnn'' where
+nnn is the maximum number of entries in the buffer.  When running with multiple
+processors, better load balancing has been observed with smaller buffers, for
+example with 256 entries per buffer.  
+
+\subsection{Generational Write Barrier} \label{sssec:writebarrier}
+\index{VM\_WriteBuffer class}
+\index{write buffer}
+\index{write barrier}
+\index{object header}
+RVM provides a class {\tt VM\_WriteBarrier} to support generational garbage 
+collection.
+When the static 
+final field {\tt VM\_Allocator.writeBarrier} is true,
+the RVM compilers generate write barriers.
+The baseline compiler generates calls to barrier methods in {\tt VM\_WriteBarrier}.
+The optimizing compiler inlines the same barrier methods.
+
+The logic of the write barrier is implemented in {\tt VM\_WriteBarrier}.
+The RVM generational collectors all use the same write barrier.
+It stores into a processor local write buffer the address of an object
+into which a ref is being stored.
+A bit in the object header identifies objects that need to be recorded.
+The barrier logic turns off the bit when an object is written to the write
+buffer, to avoid duplicate entries.
+During garbage collection, collectors must set these bits back on so that
+subsequent stores into the object will cause it to be recorded.
+
+Alternative write barriers can be implemented. For example, the concurrent
+reference counting collector uses a barrier that records both old and new
+references for each store of a reference into an object. It does this
+by building with its own version of VM\_WriteBarrier.
+
+The RVM generational collectors treat all objects which
+survive one garbage collection as old, and do not maintain ``remembered sets''
+of old objects between collections.
+
+\subsection{Starting Garbage Collection} \label{sssec:startgc}
+\index{VM\_Handshake class}
+\index{VM\_CollectorThread class}
+\index{stop-the-world garbage collection}
+\index{concurrent garbage collection}
+The stopping of mutator threads and the scheduling of the collector
+threads is handled by the classes 
+{\tt VM\_Handshake} and {\tt VM\_CollectorThread}.
+Mutator threads initiate collection by calling the {\tt collect} method
+of {\tt VM\_CollectorThread} which causes collector threads to be scheduled
+on all the {\tt VM\_Processor}s, and then yields, to allow the collector thread
+on the executing processor to be scheduled.
+Parallel execution of collector threads is synchronized by rendezvous.
+During the initial rendezvous, one of the collector threads detects
+processors whose executing thread is blocked in native code, and makes
+these processors ``non-participating'' for that collection.
+Collection begins when all ``participating'' collector threads
+arrive at the initial rendezvous.
+After the initial rendezvous, the participating collector threads
+call the {\tt collect} method of {\tt VM\_Allocator}.  They execute
+in parallel in this method until collection is complete.  By default,
+there is one collector thread for each {\tt VM\_Processor} (system thread).
+While collection is in progress, all non-collector threads are suspended
+in queues of the {\tt VM\_Processors} waiting to be re-dispatched.
+
+To implement other than stop-the-world parallel collection 
+(such as was done with the concurrent collector) then it will be necessary to modify
+or extend the {\tt VM\_Handshake} and {\tt VM\_CollectorThread} classes.
+
+\subsection{Measuring Collector Performance} \label{sssec:verbosegc}
+\index{command-line arguments}
+\index{VM\_Allocator class}
+When the ``-verbose:gc'' command line argument is specified, the time
+spent in each collection will be written out after each collection.
+In addition, summary statistics are generated when RVM exits, which
+specify the number of collections, and average and maximum collection times.
+For generational collectors, this is given for Minor and Major collections.
+Some collectors provide additional information, that can be measured
+with minimal cost, such a number of bytes copied for the copying collectors.
+
+Compile time flags can be set to cause additional information, at additional
+cost, to be measured and reported.  Some of the more useful ones are
+described here, others are described in the various {\tt VM\_Allocator}
+source files.
+
+\paragraph{TIME\_GC\_PHASES}
+This flag will cause the collector to measure the time spent in each
+of the phases of garbage collection, such as stopping mutators, finding roots,
+marking reachable objects, and finalization.  Turning on this flag will cause
+the summary statistics, with average times in each phase, to be generated 
+when RVM exits.  If {\tt -verbose:gc} is specified the output is generated after
+each collection. Turning on {\tt TIME\_GC\_PHASES} in the common 
+{\tt VM\_CollectorThread}
+class will cause it to be set in what ever 
+{\tt VM\_Allocator} is being used.
+
+\paragraph{MEASURE\_WAIT\_TIMES}
+This flag will cause the collector to measure the time each collector thread
+spends waiting during a collection.  This is time waiting for buffers while
+processing the Work Queue, and time waiting in rendezvous between phases of the
+collection process. Turning on this flag will cause
+the summary statistics, with average wait times, to be generated 
+when RVM exits.  If -verbose:gc is specified the output is generated after
+each collection, for each collector thread.
+Turning on {\tt MEASURE\_WAIT\_TIMES} in the common {\tt
+VM\_CollectorThread}
+class will cause necessary flags in {\tt VM\_Allocator} and 
+{\tt VM\_GCWorkQueue} to be set.
+
+\begin{description}
+\item[RENDEZVOUS\_TIMES] prints per thread entrance and exit times for the
+rendezvous during each collection.
+\item[GC\_COUNT\_BY\_TYPES] prints counts of the number of live objects grouped
+by type.
+\item[WORK\_QUEUE\_COUNTS] counts work queue buffers processed by each collector
+thread (in VM\_GCWorkQueue). 
+\item[COUNT\_GETS\_AND\_PUTS] counts object references processed by each collector
+thread (in VM\_GCWorkQueue). 
+\end{description}
+Not all flags are available in all VM\_Allocator files.
