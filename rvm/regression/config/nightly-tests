@@ -1,0 +1,17 @@
+gctest
+bytecodeTests
+opttests
+reflect
+threads
+utf8
+memberNaming
+jni
+CaffeineMark
+jBYTEmark
+javalex 
+xerces
+xalan
+soot
+ipsixql
+SPECjvm98 
+SPECjbb2000 
