@@ -1,0 +1,3 @@
+BaseBaseSemispace
+BaseBaseMarkSweep
+BaseAdaptiveSemispace -test-list nightly-tests-short
