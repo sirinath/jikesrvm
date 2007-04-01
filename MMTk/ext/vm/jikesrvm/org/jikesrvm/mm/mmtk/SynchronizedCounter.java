@@ -9,8 +9,8 @@
 package org.jikesrvm.mm.mmtk;
 
 import org.jikesrvm.VM;
-import org.jikesrvm.VM_Synchronization;
-import org.jikesrvm.VM_Entrypoints;
+import org.jikesrvm.scheduler.VM_Synchronization;
+import org.jikesrvm.runtime.VM_Entrypoints;
 
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.Offset;

@@ -10,6 +10,12 @@ package org.jikesrvm;
 
 import org.jikesrvm.ArchitectureSpecific.VM_CodeArray;
 import org.jikesrvm.classloader.*;
+import org.jikesrvm.scheduler.VM_Scheduler;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_Statics;
+import org.jikesrvm.runtime.VM_StackBrowser;
+import org.jikesrvm.runtime.VM_DynamicLink;
+import org.jikesrvm.runtime.VM_ExceptionDeliverer;
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.*;
 
@@ -434,9 +440,9 @@ public abstract class VM_CompiledMethod implements VM_SizeConstants {
   /**
    * Print this compiled method's portion of a stack trace 
    * @param instructionOffset offset of machine instruction from start of method
-   * @param out the PrintLN to print the stack trace to.
+   * @param out the VM_PrintLN to print the stack trace to.
    */
-  public abstract void printStackTrace(Offset instructionOffset, org.jikesrvm.PrintLN out);
+  public abstract void printStackTrace(Offset instructionOffset, org.jikesrvm.VM_PrintLN out);
 
   /**
    * Set the stack browser to the innermost logical stack frame of this method

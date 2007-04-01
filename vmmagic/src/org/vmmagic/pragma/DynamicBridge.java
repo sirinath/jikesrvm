@@ -12,6 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
+import org.vmmagic.Pragma;
 
 /**
  * Methods of a class that implements this interface are treated specially 
@@ -25,8 +26,9 @@ import java.lang.annotation.ElementType;
  *    (it is assumed that execution is resumed via a call to VM_Magic.dynamicBridgeTo)
  *
  * @author Bowen Alpern
- * @see org.jikesrvm.VM_Magic#dynamicBridgeTo(org.jikesrvm.ArchitectureSpecific.VM_CodeArray)
+ * @see org.jikesrvm.runtime.VM_Magic#dynamicBridgeTo(org.jikesrvm.ArchitectureSpecific.VM_CodeArray)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@Pragma
 public @interface DynamicBridge { }

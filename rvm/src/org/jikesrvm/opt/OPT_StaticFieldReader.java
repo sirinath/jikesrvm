@@ -9,6 +9,8 @@
 package org.jikesrvm.opt;
 
 import org.jikesrvm.*;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_Statics;
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.opt.ir.*;
 import java.lang.reflect.Field;
@@ -31,6 +33,9 @@ public abstract class OPT_StaticFieldReader implements VM_SizeConstants{
    * Read the field from obj and return as the appropriate constant
    */
   public static OPT_ConstantOperand getFieldValueAsConstant(VM_Field field, Object obj) throws NoSuchFieldException {
+    if (VM.VerifyAssertions) VM._assert(field.isFinal());
+    if (VM.VerifyAssertions) VM._assert(field.getDeclaringClass().isInitialized());
+    
     VM_TypeReference type = field.getType();
     if (VM.runningVM) {
       if(type.isReferenceType() && !type.isMagicType()) {
@@ -123,7 +128,7 @@ public abstract class OPT_StaticFieldReader implements VM_SizeConstants{
         throw new NoSuchFieldException(field.toString());
       } catch (NoClassDefFoundError e) {
         throw new NoSuchFieldException(field.toString());
-      } catch (ExceptionInInitializerError e) {
+      } catch (IllegalAccessError e) {
         throw new NoSuchFieldException(field.toString());      
       }
     }
@@ -137,7 +142,9 @@ public abstract class OPT_StaticFieldReader implements VM_SizeConstants{
    */
   public static OPT_ConstantOperand getStaticFieldValue(VM_Field field) 
     throws NoSuchFieldException {
+    if (VM.VerifyAssertions) VM._assert(field.isFinal());
     if (VM.VerifyAssertions) VM._assert(field.isStatic());
+    if (VM.VerifyAssertions) VM._assert(field.getDeclaringClass().isInitialized());
 
     VM_TypeReference fieldType = field.getType();
     Offset off = field.getOffset();
@@ -358,7 +365,7 @@ public abstract class OPT_StaticFieldReader implements VM_SizeConstants{
       throw new NoSuchFieldException(field.toString());
     } catch (NoClassDefFoundError e) {
       throw new NoSuchFieldException(field.toString());
-    } catch (ExceptionInInitializerError e) {
+    } catch (IllegalAccessError e) {
       throw new NoSuchFieldException(field.toString());      
     } 
   }

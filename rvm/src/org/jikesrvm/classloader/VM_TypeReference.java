@@ -41,7 +41,8 @@ public final class VM_TypeReference {
   final ClassLoader classloader;
 
   /**
-   * The type name
+   * The type name. For example, the primitive type int is "I", the
+   * class java.lang.String is "Ljava/lang/String;"
    */
   final VM_Atom name;
 
@@ -103,7 +104,7 @@ public final class VM_TypeReference {
   public static final VM_TypeReference OffsetArray = findOrCreate("Lorg/vmmagic/unboxed/OffsetArray;");
   public static final VM_TypeReference ExtentArray = findOrCreate("Lorg/vmmagic/unboxed/ExtentArray;");
   public static final VM_TypeReference CodeArray = findOrCreate("Lorg/jikesrvm/ArchitectureSpecific$VM_CodeArray;");
-  public static final VM_TypeReference Magic   = findOrCreate("Lorg/jikesrvm/VM_Magic;");
+  public static final VM_TypeReference Magic   = findOrCreate("Lorg/jikesrvm/runtime/VM_Magic;");
   public static final VM_TypeReference SysCall = findOrCreate("Lorg/vmmagic/pragma/SysCall;");
 
   public static final VM_TypeReference JavaLangObject = findOrCreate("Ljava/lang/Object;");
@@ -125,7 +126,7 @@ public final class VM_TypeReference {
   public static final VM_TypeReference JavaLangIllegalMonitorStateException = findOrCreate("Ljava/lang/IllegalMonitorStateException;");
 
   
-  public static final VM_TypeReference VM_Processor = findOrCreate("Lorg/jikesrvm/VM_Processor;");
+  public static final VM_TypeReference VM_Processor = findOrCreate("Lorg/jikesrvm/scheduler/VM_Processor;");
   public static final VM_TypeReference VM_Type = findOrCreate("Lorg/jikesrvm/classloader/VM_Type;");
   public static final VM_TypeReference VM_Class = findOrCreate("Lorg/jikesrvm/classloader/VM_Class;");
 
@@ -147,11 +148,20 @@ public final class VM_TypeReference {
   public static final VM_TypeReference BaselineSaveLSRegisters = 
       VM.BuildForIA32 ? null : findOrCreate("Lorg/vmmagic/pragma/BaselineSaveLSRegisters;");
 
+  public static final VM_TypeReference VM_BaseAnnotation = findOrCreate("Lorg/jikesrvm/classloader/VM_Annotation$BaseAnnotation;");
+  public static final VM_TypeReference VM_ReferenceMaps = findOrCreate("Lorg/jikesrvm/VM_ReferenceMaps;");
+  public static final VM_TypeReference VM_JNIFunctions = findOrCreate("Lorg/jikesrvm/jni/VM_JNIFunctions;");
+  
+  public static final VM_TypeReference VM_CollectorThread = findOrCreate("Lorg/jikesrvm/memorymanagers/mminterface/VM_CollectorThread;");
+
   public static final VM_TypeReference VM_Array = findOrCreate("Lorg/jikesrvm/classloader/VM_Array;");
 
   // Synthetic types used by the opt compiler 
   public static final VM_TypeReference NULL_TYPE = (VM.BuildForOptCompiler) ? findOrCreate("Lorg/jikesrvm/classloader/VM_TypeReference$NULL;") : null;
   public static final VM_TypeReference VALIDATION_TYPE = (VM.BuildForOptCompiler) ? findOrCreate("Lorg/jikesrvm/classloader/VM_TypeReference$VALIDATION;") : null;
+  public static final VM_TypeReference VM_ExceptionTable = (VM.BuildForOptCompiler) ? findOrCreate("Lorg/jikesrvm/VM_ExceptionTable;") : null; 
+
+  public static final VM_TypeReference OPT_OptimizationPlanner = (VM.BuildForAdaptiveSystem) ? findOrCreate("Lorg/jikesrvm/opt/OPT_OptimizationPlanner;") : null; 
 
   /**
    * Hash value based on name, used for canonical type dictionary

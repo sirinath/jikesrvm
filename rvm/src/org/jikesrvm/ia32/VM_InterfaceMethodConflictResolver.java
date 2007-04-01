@@ -9,8 +9,8 @@
 package org.jikesrvm.ia32;
 
 import org.jikesrvm.VM;
-import org.jikesrvm.VM_Entrypoints;
-import org.jikesrvm.VM_ObjectModel;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
 import org.jikesrvm.ArchitectureSpecific;
 import org.jikesrvm.classloader.*;
 

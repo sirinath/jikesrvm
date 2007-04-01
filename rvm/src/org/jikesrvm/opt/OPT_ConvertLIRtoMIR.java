@@ -9,6 +9,9 @@
 package org.jikesrvm.opt;
 
 import org.jikesrvm.*;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
+import org.jikesrvm.objectmodel.VM_JavaHeader;
+import org.jikesrvm.runtime.VM_Entrypoints;
 import org.jikesrvm.ArchitectureSpecific.OPT_CallingConvention;
 import org.jikesrvm.ArchitectureSpecific.OPT_ComplexLIR2MIRExpansion;
 import org.jikesrvm.ArchitectureSpecific.OPT_ConvertALUOperators;
@@ -17,7 +20,7 @@ import org.jikesrvm.classloader.*;
 import org.jikesrvm.opt.ir.*;
 import org.vmmagic.unboxed.Offset;
 import static org.jikesrvm.opt.ir.OPT_Operators.*;
-import static org.jikesrvm.VM_TIBLayoutConstants.*;
+import static org.jikesrvm.objectmodel.VM_TIBLayoutConstants.*;
 import static org.jikesrvm.VM_SizeConstants.*;
 
 /**
@@ -152,19 +155,12 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case LONG_DIV_opcode:
           {
             if (VM.BuildForPowerPC && VM.BuildFor64Addr) break; // don't reduce operator -- leave for BURS
-            OPT_Operand val1 = GuardedBinary.getClearVal1(s);
-            OPT_Operand val2 = GuardedBinary.getClearVal2(s); 
-            if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              val1 = ensureRegister(val1, s, ir);
-              val2 = ensureRegister(val2, s, ir);
-            }
             Call.mutate2(s, SYSCALL, 
                          GuardedBinary.getClearResult(s), null, 
-                         OPT_MethodOperand.STATIC(VM_Entrypoints.sysLongDivideIPField), 
-                         val1, val2);
+                         OPT_MethodOperand.STATIC(VM_Entrypoints.sysLongDivideIPField),
+                         GuardedBinary.getClearVal1(s), 
+                         GuardedBinary.getClearVal2(s));
+            OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
             OPT_CallingConvention.expandSysCall(s, ir);
           }
           break;
@@ -172,19 +168,12 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case LONG_REM_opcode:
           {
             if (VM.BuildForPowerPC && VM.BuildFor64Addr) break; // don't reduce operator -- leave for BURS
-            OPT_Operand val1 = GuardedBinary.getClearVal1(s);
-            OPT_Operand val2 = GuardedBinary.getClearVal2(s); 
-            if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              val1 = ensureRegister(val1, s, ir);
-              val2 = ensureRegister(val2, s, ir);
-            }
             Call.mutate2(s, SYSCALL, 
                          GuardedBinary.getClearResult(s), null, 
                          OPT_MethodOperand.STATIC(VM_Entrypoints.sysLongRemainderIPField), 
-                         val1, val2);
+                         GuardedBinary.getClearVal1(s),
+                         GuardedBinary.getClearVal2(s));
+            OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
             OPT_CallingConvention.expandSysCall(s, ir);
           }
           break;
@@ -192,15 +181,12 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case FLOAT_REM_opcode: case DOUBLE_REM_opcode:
           {
             if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              OPT_Operand val1 = ensureRegister(Binary.getClearVal1(s), s, ir);
-              OPT_Operand val2 = ensureRegister(Binary.getClearVal2(s), s, ir);
               Call.mutate2(s, SYSCALL, 
                            Binary.getClearResult(s), null, 
                            OPT_MethodOperand.STATIC(VM_Entrypoints.sysDoubleRemainderIPField), 
-                           val1, val2);
+                           Binary.getClearVal1(s),
+                           Binary.getClearVal2(s));
+              OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
               OPT_CallingConvention.expandSysCall(s, ir);
             }
           }
@@ -209,14 +195,11 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case LONG_2FLOAT_opcode:
           { 
             if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              OPT_Operand val = ensureRegister(Unary.getClearVal(s), s, ir);
               Call.mutate1(s, SYSCALL,
                            Unary.getClearResult(s), null,
                            OPT_MethodOperand.STATIC(VM_Entrypoints.sysLongToFloatIPField),
-                           val);
+                           Unary.getClearVal(s));
+              OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
               OPT_CallingConvention.expandSysCall(s, ir);
             }
           }
@@ -225,15 +208,12 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case LONG_2DOUBLE_opcode:
           { 
             if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              OPT_Operand val = ensureRegister(Unary.getClearVal(s), s, ir);
               Call.mutate1(s, SYSCALL,
                            Unary.getClearResult(s),
                            null,
                            OPT_MethodOperand.STATIC(VM_Entrypoints.sysLongToDoubleIPField),
-                           val);
+                           Unary.getClearVal(s));
+              OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
               OPT_CallingConvention.expandSysCall(s, ir);
             }
           }
@@ -242,18 +222,12 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case FLOAT_2LONG_opcode:
           { 
             if (VM.BuildForPowerPC && VM.BuildFor64Addr) break; // don't reduce operator -- leave for BURS
-            OPT_Operand val = Unary.getClearVal(s);
-            if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              val = ensureRegister(val, s, ir);
-            }
             Call.mutate1(s, SYSCALL,
                          Unary.getClearResult(s),
                          null,
                          OPT_MethodOperand.STATIC(VM_Entrypoints.sysFloatToLongIPField),
-                         val);
+                         Unary.getClearVal(s));
+            OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
             OPT_CallingConvention.expandSysCall(s, ir);
           }
           break;
@@ -261,36 +235,22 @@ public final class OPT_ConvertLIRtoMIR extends OPT_OptimizationPlanCompositeElem
         case DOUBLE_2LONG_opcode:
           { 
             if (VM.BuildForPowerPC && VM.BuildFor64Addr) break; // don't reduce operator -- leave for BURS
-            OPT_Operand val = Unary.getClearVal(s);
-            if (VM.BuildForPowerPC) {
-              // NOTE: must move constants out of sysCall before we expand it.
-              //       otherwise we'll have the wrong value in the JTOC register when
-              //       we try to load the constant from the JTOC!
-              val = ensureRegister(val, s, ir);
-            }
             Call.mutate1(s, SYSCALL,
                          Unary.getClearResult(s),
                          null,
                          OPT_MethodOperand.STATIC(VM_Entrypoints.sysDoubleToLongIPField),
-                         val);
+                         Unary.getClearVal(s));
+            OPT_ConvertToLowLevelIR.expandSysCallTarget(s, ir);
             OPT_CallingConvention.expandSysCall(s, ir);
           }
+          break;
+
+        case SYSCALL_opcode:
+          OPT_CallingConvention.expandSysCall(s, ir);
           break;
         }
       }
     }
-
-    private OPT_Operand ensureRegister(OPT_Operand op, OPT_Instruction s, OPT_IR ir) {
-      if (op.isConstant()) {
-        VM_TypeReference opType = op.getType();
-        OPT_RegisterOperand rop = ir.regpool.makeTemp(opType);
-        s.insertBefore(Move.create(OPT_IRTools.getMoveOp(opType), rop, op));
-        return rop.copy();
-      } else {
-        return op;
-      }
-    }
-
   }
 
 

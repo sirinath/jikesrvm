@@ -25,6 +25,15 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 import org.jikesrvm.*;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
+import org.jikesrvm.objectmodel.VM_MiscHeader;
+import org.jikesrvm.runtime.VM_Statics;
+import org.jikesrvm.runtime.VM_BootRecord;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.runtime.VM_ObjectAddressRemapper;
+import org.jikesrvm.scheduler.VM_Thread;
+import org.jikesrvm.scheduler.VM_Scheduler;
 import org.jikesrvm.ArchitectureSpecific.VM_CodeArray;
 import org.jikesrvm.jni.*;
 import org.jikesrvm.classloader.*;
@@ -2185,10 +2194,7 @@ public class BootImageWriter extends BootImageWriterMessages
         if (type == null) {
           throw new Error("Failed to find type for Constructor.constructor: " + cons + " " + typeName);
         }
-        VM_Class klass = type.asClass();
-        if (klass == null) {
-          throw new Error("Failed to populate Constructor.constructor for " + cons);
-        }
+        final VM_Class klass = type.asClass();
         Class[] consParams = cons.getParameterTypes();
         VM_Method constructor = null;
         loop_over_all_constructors:
@@ -2460,7 +2466,10 @@ public class BootImageWriter extends BootImageWriterMessages
     try {
       return Class.forName(rvmType.toString());
     }
-    catch (ExceptionInInitializerError e) {x=e;}
+    catch (ExceptionInInitializerError e) {
+      throw e;
+    }
+    catch (IllegalAccessError e)          {x=e;}
     catch (UnsatisfiedLinkError e)        {x=e;}
     catch (NoClassDefFoundError e)        {x=e;}
     catch (SecurityException e)           {x=e;}

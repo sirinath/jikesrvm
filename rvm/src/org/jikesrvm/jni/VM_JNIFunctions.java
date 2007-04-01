@@ -10,7 +10,13 @@
 package org.jikesrvm.jni;
 
 import org.jikesrvm.*;
-import static org.jikesrvm.VM_SysCall.sysCall;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
+import org.jikesrvm.runtime.VM_Runtime;
+import org.jikesrvm.runtime.VM_Reflection;
+import org.jikesrvm.runtime.VM_Memory;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_BootRecord;
+import static org.jikesrvm.runtime.VM_SysCall.sysCall;
 import org.jikesrvm.ArchitectureSpecific.VM_JNIHelpers;
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.memorymanagers.mminterface.MM_Interface;
@@ -86,7 +92,7 @@ import org.vmmagic.pragma.NativeBridge;
 @NativeBridge
 public class VM_JNIFunctions implements VM_SizeConstants {
   // one message for each JNI function called from native
-  public static final boolean traceJNI = false;
+  public static final boolean traceJNI = VM_Properties.verboseJNI && true;
 
   // number of JNI function entries
   public static final int FUNCTIONCOUNT = 232; // JNI 1.4

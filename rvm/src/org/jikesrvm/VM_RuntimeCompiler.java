@@ -10,8 +10,18 @@ package org.jikesrvm;
 
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.opt.*;
-import org.jikesrvm.adaptive.*;
+import org.jikesrvm.adaptive.util.VM_CompilerAdviceAttribute;
+import org.jikesrvm.adaptive.util.VM_AOSLogging;
+import org.jikesrvm.adaptive.util.VM_AOSGenerator;
+import org.jikesrvm.adaptive.recompilation.VM_InvocationCounts;
+import org.jikesrvm.adaptive.recompilation.VM_PreCompile;
+import org.jikesrvm.adaptive.recompilation.instrumentation.VM_AOSInstrumentationPlan;
+import org.jikesrvm.adaptive.controller.VM_Controller;
+import org.jikesrvm.adaptive.controller.VM_ControllerPlan;
+import org.jikesrvm.adaptive.controller.VM_ControllerMemory;
 import org.jikesrvm.ArchitectureSpecific.VM_JNICompiler;
+import org.jikesrvm.scheduler.VM_Thread;
+import org.jikesrvm.runtime.VM_Time;
 
 /**
  * Harness to select which compiler to dynamically
@@ -92,7 +102,7 @@ public class VM_RuntimeCompiler implements VM_Constants,
 
   // Cache objects needed to cons up compilation plans
   // TODO: cutting link to opt compiler by declaring type as object.
-  public static Object /* OPT_Options */ options;
+  public static final Object /* OPT_Options */ options = VM.BuildForAdaptiveSystem ? new OPT_Options() : null;
   public static Object /* OPT_OptimizationPlanElement[] */ optimizationPlan;
 
   /**
@@ -244,9 +254,7 @@ public class VM_RuntimeCompiler implements VM_Constants,
 
     if (VM.BuildForAdaptiveSystem) {
       // Get the opt's report
-      VM_TypeReference theTypeRef = VM_TypeReference.findOrCreate(VM_BootstrapClassLoader.getBootstrapClassLoader(),
-                                                                  VM_Atom.findOrCreateAsciiAtom("Lorg/jikesrvm/opt/OPT_OptimizationPlanner;"));
-      VM_Type theType = theTypeRef.peekResolvedType();
+      VM_Type theType = VM_TypeReference.OPT_OptimizationPlanner.peekResolvedType();
       if (theType != null && theType.asClass().isInitialized()) {
         OPT_OptimizationPlanner.generateOptimizingCompilerSubsystemReport(explain);
       } else {
@@ -565,7 +573,6 @@ public class VM_RuntimeCompiler implements VM_Constants,
       VM_Callbacks.addExitMonitor(new VM_RuntimeCompiler());
     }
     if (VM.BuildForAdaptiveSystem) {
-      options = new OPT_Options();
       optimizationPlan = OPT_OptimizationPlanner.createOptimizationPlan((OPT_Options)options);
       if (VM.MeasureCompilation) {
         OPT_OptimizationPlanner.initializeMeasureCompilation();

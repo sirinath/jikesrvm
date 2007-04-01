@@ -12,6 +12,9 @@ import org.jikesrvm.ArchitectureSpecific.VM_BaselineConstants;
 import org.jikesrvm.ArchitectureSpecific.VM_BaselineExceptionDeliverer;
 import org.jikesrvm.ArchitectureSpecific.VM_Compiler;
 import org.jikesrvm.classloader.*;
+import org.jikesrvm.runtime.VM_DynamicLink;
+import org.jikesrvm.runtime.VM_ExceptionDeliverer;
+import org.jikesrvm.runtime.VM_StackBrowser;
 
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.Offset;
@@ -68,12 +71,12 @@ public final class VM_BaselineCompiledMethod extends VM_CompiledMethod
    * TODO: redesign this.  There has to be a cleaner way!
    */
   //private int startLocalOffset;
-  private int emptyStackOffset;
+  private final int emptyStackOffset;
   private int lastFixedStackRegister;
   private int lastFloatStackRegister;
 
-  private int[] localFixedLocations; 
-  private int[] localFloatLocations; 
+  private final int[] localFixedLocations; 
+  private final int[] localFloatLocations; 
  
 //  public int getStartLocalOffset() {
 //    return startLocalOffset;
@@ -242,8 +245,8 @@ public final class VM_BaselineCompiledMethod extends VM_CompiledMethod
 
   // Print this compiled method's portion of a stack trace 
   // Taken:   offset of machine instruction from start of method
-  //          the PrintLN to print the stack trace to.
-  public void printStackTrace(Offset instructionOffset, PrintLN out) {
+  //          the VM_PrintLN to print the stack trace to.
+  public void printStackTrace(Offset instructionOffset, VM_PrintLN out) {
     out.print("\tat ");
     out.print(method.getDeclaringClass()); // VM_Class
     out.print('.');
@@ -343,8 +346,8 @@ public final class VM_BaselineCompiledMethod extends VM_CompiledMethod
     }
   }
 
-  private static final VM_TypeReference TYPE = VM_TypeReference.findOrCreate(VM_BootstrapClassLoader.getBootstrapClassLoader(),
-                                                                             VM_Atom.findOrCreateAsciiAtom("Lorg/jikesrvm/VM_BaselineCompiledMethod;"));
+  private static final VM_TypeReference TYPE = VM_TypeReference.findOrCreate(VM_BaselineCompiledMethod.class);
+
   public int size() {
     int size = TYPE.peekResolvedType().asClass().getInstanceSize();
     if (bytecodeMap != null) size += VM_Array.ByteArray.getInstanceSize(bytecodeMap.length);

@@ -9,7 +9,12 @@
 
 package org.jikesrvm.adaptive;
 
-import org.jikesrvm.*;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.scheduler.VM_ThreadQueue;
+import org.jikesrvm.scheduler.VM_Synchronization;
+import org.jikesrvm.scheduler.VM_Scheduler;
+import org.jikesrvm.scheduler.VM_Thread;
+import org.jikesrvm.adaptive.controller.VM_Controller;
 
 import org.vmmagic.pragma.*;
 
@@ -126,7 +131,7 @@ public class OSR_OrganizerThread extends VM_Thread {
   // proces osr request
   private void processOsrRequest() {
     // scanning VM_Scheduler.threads
-    for (int i=0, n=VM_Scheduler.threads.length; i<n; i++) {
+    for (int i=0, n= VM_Scheduler.threads.length; i<n; i++) {
       VM_Thread thread = VM_Scheduler.threads[i];
       if (thread != null) {
         if (thread.requesting_osr) {
