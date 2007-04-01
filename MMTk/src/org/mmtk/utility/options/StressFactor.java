@@ -1,0 +1,38 @@
+/*
+ * This file is part of MMTk (http://jikesrvm.sourceforge.net).
+ * MMTk is distributed under the Common Public License (CPL).
+ * A copy of the license is included in the distribution, and is also
+ * available at http://www.opensource.org/licenses/cpl1.0.php
+ *
+ * (C) Copyright Department of Computer Science,
+ * Australian National University. 2004
+ */
+package org.mmtk.utility.options;
+
+import org.mmtk.plan.Plan;
+import org.mmtk.utility.Constants;
+
+/**
+ * Force frequent collections after amounts of allocation.
+ * 
+ *
+ * @author Daniel Frampton
+ */
+public class StressFactor extends PagesOption {
+  /**
+   * Create the option, defaulting to the maximum possible value.
+   */
+  public StressFactor() {
+    super("Stress Factor",
+          "Force a collection after this much allocation",
+        Integer.MAX_VALUE >>> Constants.LOG_BYTES_IN_PAGE);
+  }
+
+  /**
+   * Ensure that the value is sensible.
+   */
+  public void validate() {
+    failIf(this.value < Plan.DEFAULT_POLL_FREQUENCY,
+        "Stress Factor must be at least equal to plan's poll frequency");
+  }
+}

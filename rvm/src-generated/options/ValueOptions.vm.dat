@@ -1,0 +1,62 @@
+#
+# This file is part of Jikes RVM (http://jikesrvm.sourceforge.net).
+# The Jikes RVM project is distributed under the Common Public License (CPL).
+# A copy of the license is included in the distribution, and is also
+# available at http://www.opensource.org/licenses/cpl1.0.php
+#
+# (C) Copyright IBM Corp. 2003
+#
+DECL 
+# Structure of DECL TAG FULL_NAME TYPE DEFAULT_VALUE {SHORT_NAME}
+# TAG: E = Enumeration, V = Value
+# TYPE: byte, int, String, float, double
+DESCRIP  
+ENUMS
+#Structure of ENUMS "ITEM_NAME QUERY_NAME CMD_NAME"
+
+V maxSystemTroubleRecursionDepth int  3
+If we get deeper than this in one of the System Trouble functions, try to die.
+
+
+# NOTE: Although this option can be set to arbitrary values,
+#       setting it to a smaller quantum than what is actually supported
+#       by pthread nanosleep on the target platform will reduce the 
+#       effectiveness of the Adaptive System.  Therefore, this setting
+#       should be verified by running a relatively long running program
+#       on an unload machine and enabling -X:aos:reportInterruptStats=true
+V interruptQuantum int (VM.BuildForLinux&&VM.BuildForIA32)?20:10
+Timer interrupt scheduling quantum in ms
+
+
+V schedulingMultiplier int 1
+Scheduling quantum = interruptQuantum * schedulingMultiplier
+
+
+V TraceThreadScheduling int 0 traceThreadScheduling
+Trace actions taken by thread scheduling
+
+
+V VerboseStackTracePeriod int 0 verboseStackTrace
+Trace every nth time a stack trace is created
+
+
+V EdgeCounterFile String null edgeCounterFile
+Input file of edge counter profile data
+
+
+V CBSCallSamplesPerTick int 0
+How many CBS call samples (Prologue/Epilogue) should we take per time tick
+
+
+V CBSCallSampleStride int 7
+Stride between each CBS call sample (Prologue/Epilogue) within a sampling window
+
+
+V CBSMethodSamplesPerTick int 0
+How many CBS method samples (any yieldpoint) should we take per time tick
+
+
+V CBSMethodSampleStride int 3
+Stride between each CBS method sample (any yieldpoint) within a sampling window
+
+
