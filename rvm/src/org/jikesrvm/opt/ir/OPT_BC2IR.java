@@ -9,6 +9,8 @@
 package org.jikesrvm.opt.ir;
 
 import org.jikesrvm.*;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.runtime.VM_Magic;
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.opt.*;
 import java.util.Enumeration;
@@ -16,7 +18,7 @@ import java.util.HashSet;
 import java.util.NoSuchElementException;
 import org.jikesrvm.osr.*;
 import org.jikesrvm.ArchitectureSpecific.OPT_RegisterPool;
-import org.jikesrvm.adaptive.*;
+import org.jikesrvm.adaptive.controller.VM_Controller;
 import java.util.ArrayList;
 
 import org.vmmagic.pragma.*;

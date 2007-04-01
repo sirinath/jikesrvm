@@ -9,6 +9,9 @@
 package org.jikesrvm;
 
 import org.jikesrvm.classloader.*;
+import org.jikesrvm.runtime.VM_StackBrowser;
+import org.jikesrvm.runtime.VM_DynamicLink;
+import org.jikesrvm.runtime.VM_ExceptionDeliverer;
 
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.Offset;
@@ -59,7 +62,7 @@ public final class VM_JNICompiledMethod extends VM_CompiledMethod {
     return -1;
   }
    
-  public void printStackTrace(Offset instructionOffset, org.jikesrvm.PrintLN out) {
+  public void printStackTrace(Offset instructionOffset, org.jikesrvm.VM_PrintLN out) {
     if (method != null) {
       // print name of native method
       out.print("\tat ");

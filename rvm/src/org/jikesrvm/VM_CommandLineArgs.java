@@ -8,14 +8,16 @@
  */
 package org.jikesrvm;
 
-import static org.jikesrvm.VM_SysCall.sysCall;
+import static org.jikesrvm.runtime.VM_SysCall.sysCall;
 
-import org.jikesrvm.adaptive.VM_Controller;
+import org.jikesrvm.adaptive.controller.VM_Controller;
 
 import org.jikesrvm.memorymanagers.mminterface.MM_Interface;
 import org.jikesrvm.classloader.*;
+import org.jikesrvm.scheduler.VM_Scheduler;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * Command line option processing.
@@ -27,11 +29,20 @@ import java.io.File;
 public class VM_CommandLineArgs { 
   private static final boolean DEBUG = false;
 
-  private static final class Prefix {
-    public String value;
-    public int type;
+  /** Represent a single command line prefix */
+  private static final class Prefix implements Comparable {
+    /** The command line string e.g. "-X:irc:" */
+    public final String value;
+    /** A number that describes the type of the argument */
+    public final int type;
+    /** Number of arguments of this type seen */
+    public int count = 0;
+    /** Construct a prefix with the given argument string and type */
     public Prefix(String v, int t) { value = v; type = t; }
-    public int count = 0; // number of arguments of that type
+    /** Sorting method for Comparable. Sort by string value */
+    public int compareTo(Object o) {
+      return -value.compareTo(((Prefix)o).value);
+    }
   }
 
   // ---------------//
@@ -72,7 +83,7 @@ public class VM_CommandLineArgs {
   public static final int BASE_ARG             = 19;
   public static final int OPT_ARG              = 20;
   public static final int OPT_HELP_ARG         = 21;
-  public static final int VERIFY_ARG           = 22;
+  public static final int VERIFY_ARG           = 22; /* Silently ignored */
   public static final int GC_HELP_ARG          = 23;
   public static final int GC_ARG               = 24;
   public static final int BOOTSTRAP_CLASSES_ARG = 27;
@@ -133,20 +144,15 @@ public class VM_CommandLineArgs {
     new Prefix("-X:vm:help$",           VM_HELP_ARG),
     new Prefix("-X:vm$",                VM_HELP_ARG),
     new Prefix("-X:vm:",                VM_ARG),
+    
+    /* Silently ignored */
+    new Prefix("-Xverify",              VERIFY_ARG),
+    
     app_prefix
   };
 
   static {
-    // Bubble sort the prefixes (yeah, yeah, I know)
-    // 
-    // Besides, this is done only at boot image writing time, not at runtime.
-    for (int i = 0; i < prefixes.length; i++)
-      for (int j = i + 1; j < prefixes.length; j++)
-        if (prefixes[j].value.compareTo(prefixes[i].value) >= 0) {
-          Prefix t = prefixes[i];
-          prefixes[i] = prefixes[j];
-          prefixes[j] = t;
-        }
+    Arrays.sort(prefixes);
     if (DEBUG) {
       for (int i = 0; i < prefixes.length; i++) {
         Prefix t = prefixes[i];
@@ -302,6 +308,7 @@ public class VM_CommandLineArgs {
    * @return the environment arg, or null if there is none.
    */
   public static String getEnvironmentArg(String variable) {
+    if (!VM.runningVM) throw new IllegalAccessError("Environment variables can't be read in a non-running VM");
     String[] allEnvArgs = getArgs(ENVIRONMENT_ARG);
     String prefix = variable + "=";
     if (allEnvArgs != null)
@@ -310,14 +317,10 @@ public class VM_CommandLineArgs {
           return allEnvArg.substring(variable.length() + 1);
 
     // There are some that we treat specially.
-    if (variable.equals("rvm.root"))
-      return getRvmRoot();
-    else if (variable.equals("rvm.build"))
-      return getRvmBuild();
-    else if (variable.equals("java.home"))
+    if (variable.equals("java.home"))
       return getRvmRoot();
     else if (variable.equals("gnu.classpath.home.url"))
-      return "file:" + getRvmBuild();
+      return "file:" + getRvmRoot();
     else if (variable.equals("gnu.classpath.vm.shortname"))
       return "JikesRVM";
     else if (variable.equals("user.home"))
@@ -334,25 +337,22 @@ public class VM_CommandLineArgs {
     return null;
   }
 
-  public static String getRvmRoot() {
+  private static String getRvmRoot() {
     return null;
   }
-  public static String getRvmBuild() {
+  private static String getUserHome() {
     return null;
   }
-  public static String getUserHome() {
+  private static String getCWD() {
     return null;
   }
-  public static String getCWD() {
+  private static String getOsName() {
     return null;
   }
-  public static String getOsName() {
+  private static String getOsVersion() {
     return null;
   }
-  public static String getOsVersion() {
-    return null;
-  }
-  public static String getOsArch() {
+  private static String getOsArch() {
     return null;
   }
   
@@ -711,7 +711,8 @@ public class VM_CommandLineArgs {
 
     /** Read argument # @param i
      * Assume arguments are encoded in the platform's 
-     * "default character set". */ 
+     * "default character set". */
+    @SuppressWarnings({"deprecation"})
     String getArg(int i) {
       int cnt;
       for (;;) {
@@ -741,9 +742,7 @@ public class VM_CommandLineArgs {
             called early on in the boot process (which the
             default-character-set version below does). */
       //      return new String(buf, 0, cnt);
-      @SuppressWarnings("deprecation")
-      String result = new String(buf, 0, 0, cnt);
-      return result;
+      return new String(buf, 0, 0, cnt);
     }
     int numArgs() {
       return sysArg(-1, buf);

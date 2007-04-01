@@ -5,9 +5,38 @@ Jikes RVM NEWS -- History of significant changes
 This file contains the release notes since Jikes RVM 2.0.0, released
 on October 14, 2001,
 
+
+*Jikes RVM 2.9.1 Release Notes (Future)
+** Highlights
+
+*** VM_ prefix added to classes that must be included in the primordial 
+    class list. Classes affected include; PrintLN, PrintContainer, 
+    ApplicationClassLoader, DebuggerThread, FinalizerThread and MainThread.
+
+*** Classes in the adaptive package have been reorganized into packages 
+    to match the directory layout in 2.4.6 release.
+
+*** Classes that resided in the objectmodel directory in 2.4.6 have 
+    been moved in to the "org.jikesrvm.objectmodel" package.
+
+*** Classes that resided in the scheduler directory in 2.4.6 have 
+    been moved in to the "org.jikesrvm.scheduler" package.
+
+*** Classes that resided in the runtime directory in 2.4.6 have 
+    been moved in to the "org.jikesrvm.runtime" package.
+
+** Bug fixes
+
+*** Fix final field chasing in OPT_Simplifier and re-enable constant 
+    folding for fields.
+
+** Other Notes
+
+
 *Jikes RVM 2.9.0.1 Release Notes (April 1, 2007)
 *** Backport commit 11875 to fix bug when building GNU classpath for
     for the first time.
+
 
 *Jikes RVM 2.9.0 Release Notes (March 15, 2007)
 ** Highlights
@@ -70,7 +99,7 @@ on October 14, 2001,
     It is now available on the research tracker (item 1613215),
     by svn diff -r11162:11161, or in releases through 2.4.6.
 
-*** This release is know to not work on OS X.  We would like to get this 
+*** This release is known to not work on OS X.  We would like to get this 
     platform working again;  if you use Jikes RVM on OS X and are willing to
     help fix it, please let us know.
 

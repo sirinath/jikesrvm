@@ -8,12 +8,30 @@
  */
 package org.jikesrvm;
 
-import static org.jikesrvm.VM_SysCall.sysCall;
+import static org.jikesrvm.runtime.VM_SysCall.sysCall;
 
 import org.jikesrvm.ArchitectureSpecific.VM_OutOfLineMachineCode;
 import org.jikesrvm.ArchitectureSpecific.VM_ProcessorLocalState;
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.memorymanagers.mminterface.MM_Interface;
+import org.jikesrvm.scheduler.VM_Processor;
+import org.jikesrvm.scheduler.VM_Thread;
+import org.jikesrvm.scheduler.VM_Scheduler;
+import org.jikesrvm.scheduler.VM_MainThread;
+import org.jikesrvm.scheduler.VM_DebuggerThread;
+import org.jikesrvm.scheduler.VM_Lock;
+import org.jikesrvm.scheduler.VM_Wait;
+import org.jikesrvm.scheduler.VM_Synchronization;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_BootRecord;
+import org.jikesrvm.runtime.VM_ExitStatus;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.runtime.VM_Time;
+import org.jikesrvm.runtime.VM_DynamicLibrary;
+import org.jikesrvm.runtime.VM_FileSystem;
+import org.jikesrvm.runtime.VM_Runtime;
+import org.jikesrvm.adaptive.controller.VM_Controller;
+import org.jikesrvm.adaptive.util.VM_CompilerAdvice;
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.*;
 
@@ -28,8 +46,7 @@ import org.vmmagic.unboxed.*;
  * @date 10 July 2003
  */
 @Uninterruptible public class VM extends VM_Properties 
-  implements VM_Constants, VM_ExitStatus
-{ 
+  implements VM_Constants, VM_ExitStatus { 
   //----------------------------------------------------------------------//
   //                          Initialization.                             //
   //----------------------------------------------------------------------//
@@ -222,7 +239,7 @@ import org.vmmagic.unboxed.*;
     runClassInitializer("java.lang.VMString");
     runClassInitializer("gnu.java.security.provider.DefaultPolicy");
     runClassInitializer("java.net.URL"); // needed for URLClassLoader
-    /* Needed for ApplicationClassLoader, which in turn is needed by
+    /* Needed for VM_ApplicationClassLoader, which in turn is needed by
        VMClassLoader.getSystemClassLoader()  */
     runClassInitializer("java.net.URLClassLoader"); 
     
@@ -282,7 +299,7 @@ import org.vmmagic.unboxed.*;
      
     runClassInitializer("java.lang.VMDouble");
     runClassInitializer("java.util.PropertyPermission");
-    runClassInitializer("org.jikesrvm.VM_Process");
+    runClassInitializer("org.jikesrvm.runtime.VM_Process");
     runClassInitializer("org.jikesrvm.classloader.VM_Annotation");
     runClassInitializer("java.lang.VMClassLoader");
 
@@ -317,7 +334,7 @@ import org.vmmagic.unboxed.*;
 
     if (VM.BuildForAdaptiveSystem) {
       if (verboseBoot >= 1) VM.sysWriteln("Initializing adaptive system");
-      org.jikesrvm.adaptive.VM_Controller.boot();
+      VM_Controller.boot();
     }
 
     // The first argument must be a class name.
@@ -338,7 +355,7 @@ import org.vmmagic.unboxed.*;
     VM_ClassLoader.getApplicationClassLoader();
     VM_ClassLoader.declareApplicationClassLoaderIsReady();
 
-    if (verboseBoot >= 1) VM.sysWriteln("Turning back on security checks.  Letting people see the ApplicationClassLoader.");
+    if (verboseBoot >= 1) VM.sysWriteln("Turning back on security checks.  Letting people see the VM_ApplicationClassLoader.");
     // Turn on security checks again.
     // Commented out because we haven't incorporated this into the main CVS
     // tree yet. 
@@ -358,7 +375,7 @@ import org.vmmagic.unboxed.*;
     if (verboseBoot >= 2) VM.sysWriteln("Creating main thread");
     // Create main thread.
     if (verboseBoot >= 1) VM.sysWriteln("Constructing mainThread");
-    Thread mainThread = new MainThread(applicationArguments);
+    Thread mainThread = new VM_MainThread(applicationArguments);
 
     // Schedule "main" thread for execution.
     if (verboseBoot >= 1) VM.sysWriteln("Starting main thread");
@@ -366,7 +383,7 @@ import org.vmmagic.unboxed.*;
 
     if (verboseBoot >= 1) VM.sysWriteln("Starting debugger thread");
     // Create one debugger thread.
-    VM_Thread t = new DebuggerThread();
+    VM_Thread t = new VM_DebuggerThread();
     t.start(VM_Scheduler.debuggerQueue);
 
     // End of boot thread.

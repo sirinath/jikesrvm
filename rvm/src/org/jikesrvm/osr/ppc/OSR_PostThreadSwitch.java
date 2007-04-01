@@ -9,8 +9,8 @@
 
 package org.jikesrvm.osr.ppc;
 
-import org.jikesrvm.VM_Magic;
-import org.jikesrvm.VM_Thread;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.scheduler.VM_Thread;
 import org.jikesrvm.ArchitectureSpecific;
 import org.jikesrvm.ppc.VM_BaselineConstants;
 

@@ -10,6 +10,9 @@ package org.jikesrvm;
 
 import org.jikesrvm.classloader.VM_Type;
 import org.jikesrvm.classloader.VM_Method;
+import org.jikesrvm.runtime.VM_DynamicLink;
+import org.jikesrvm.runtime.VM_StackBrowser;
+import org.jikesrvm.runtime.VM_ExceptionDeliverer;
 
 import org.vmmagic.pragma.*;
 import org.vmmagic.unboxed.Offset;
@@ -60,7 +63,7 @@ final class VM_HardwareTrapCompiledMethod extends VM_CompiledMethod {
     if (VM.VerifyAssertions) VM._assert(VM.NOT_REACHED);
   }
 
-  public void printStackTrace(Offset instructionOffset, org.jikesrvm.PrintLN out) {
+  public void printStackTrace(Offset instructionOffset, org.jikesrvm.VM_PrintLN out) {
     out.println("\tat <hardware trap>");
   }
 

@@ -12,17 +12,17 @@ package org.jikesrvm.osr.ia32;
 import org.jikesrvm.VM;
 import org.jikesrvm.VM_CompiledMethod;
 import org.jikesrvm.VM_CompiledMethods;
-import org.jikesrvm.VM_Entrypoints;
-import org.jikesrvm.VM_Magic;
-import org.jikesrvm.VM_Memory;
-import org.jikesrvm.VM_Statics;
-import org.jikesrvm.VM_Thread;
+import org.jikesrvm.runtime.VM_Entrypoints;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.runtime.VM_Memory;
+import org.jikesrvm.runtime.VM_Statics;
+import org.jikesrvm.scheduler.VM_Thread;
 import org.jikesrvm.ArchitectureSpecific;
 import org.jikesrvm.ia32.VM_BaselineConstants;
 import org.jikesrvm.ia32.VM_Assembler;
 import org.jikesrvm.opt.VM_OptCompiledMethod;
 import org.jikesrvm.osr.OSR_ExecutionState;
-import org.jikesrvm.adaptive.*;
+import org.jikesrvm.adaptive.util.VM_AOSLogging;
 
 import org.vmmagic.unboxed.*;
 

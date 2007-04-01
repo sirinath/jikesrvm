@@ -1,6 +1,6 @@
 <project name="JikesRVM" default="main" basedir=".">
 
-  <property name="rvm.version" value="2.9.0.1"/>
+  <property name="rvm.version" value="2.9.0+svn"/>
 
   <property name="jikesrvm.dir" location="${basedir}"/>
   <import file="build/base.xml"/>
@@ -523,7 +523,7 @@ Check to make sure all required properties are specified. This includes properti
     <property name="options.dir" location="${basedir}/rvm/src-generated/options"/>
 
     <mkdir dir="${generated.java}/org/jikesrvm/opt"/>
-    <mkdir dir="${generated.java}/org/jikesrvm/adaptive"/>
+    <mkdir dir="${generated.java}/org/jikesrvm/adaptive/util"/>
     <GenerateFromTemplate>
       <args>
         <arg value="${options.dir}/VM_Options.template"/>
@@ -554,7 +554,7 @@ Check to make sure all required properties are specified. This includes properti
     <GenerateFromTemplate>
       <args>
         <arg value="${options.dir}/VM_AOSOptions.template"/>
-        <arg value="${generated.java}/org/jikesrvm/adaptive/VM_AOSExternalOptions.java"/>
+        <arg value="${generated.java}/org/jikesrvm/adaptive/util/VM_AOSExternalOptions.java"/>
         <arg value="BOOLEAN_DAT_FILES=${options.dir}/BooleanOptions.aos.dat"/>
         <arg value="VALUE_DAT_FILES=${options.dir}/ValueOptions.aos.dat"/>
         <arg value="MYTYPE=VM_AOSExternalOptions"/>
@@ -599,7 +599,7 @@ Check to make sure all required properties are specified. This includes properti
     <copy todir="${build.ia32-assembler-opt.dir}">
       <globmapper from="*.fake" to="*.java"/>
       <fileset dir="${ia32-assembler-opt.dir}">
-        <include name="VM*.fake"/>
+        <include name="**/VM*.fake"/>
         <include name="ArchitectureSpecific.fake"/>
       </fileset>
     </copy>
@@ -833,7 +833,7 @@ Check to make sure all required properties are specified. This includes properti
       <arg value="${tasks.classes}:${build.vmmagic-stub.classes}:${build.classes}"/>
       <arg value="-s"/>
       <arg value="${build.base}/syscall/java"/>
-      <arg value="${main.java}/org/jikesrvm/VM_SysCall.java"/>
+      <arg value="${main.java}/org/jikesrvm/runtime/VM_SysCall.java"/>
     </exec>
     
     <echo message="second compile (from ${generated.java})"/>
@@ -876,6 +876,7 @@ Check to make sure all required properties are specified. This includes properti
       </fileset>
       <fileset dir="${build.vmmagic-stub.classes}">
         <include name="org/vmmagic/pragma/**"/>
+        <include name="org/vmmagic/*"/>
       </fileset>
       <fileset dir="${build.vmmagic.classes}"/>
     </jar>
@@ -914,11 +915,15 @@ Check to make sure all required properties are specified. This includes properti
     <fileset id="primordials.vmmagic" dir="${build.vmmagic.classes}">
       <include name="**/*.class"/>
     </fileset>
+    <fileset id="primordials.vmmagic-stub" dir="${build.vmmagic-stub.classes}">
+      <include name="**/*.class"/>
+    </fileset>
     <property name="primordials.main" refid="primordials.main"/>
     <property name="primordials.vmmagic" refid="primordials.vmmagic"/>
+    <property name="primordials.vmmagic-stub" refid="primordials.vmmagic-stub"/>
 
     <echo file="${build.base}/ClassesForImage.txt"
-          message="${primordials.main}${line.separator}${primordials.vmmagic}${line.separator}"/>
+          message="${primordials.main}${line.separator}${primordials.vmmagic}${line.separator}${primordials.vmmagic-stub}${line.separator}"/>
     <replace file="${build.base}/ClassesForImage.txt" token=";" value="${line.separator}"/>
     <replaceregexp file="${build.base}/ClassesForImage.txt" match="(.*).class" replace="L\1;" byline="true"/>
 
@@ -1062,8 +1067,8 @@ Check to make sure all required properties are specified. This includes properti
   <target name="gen-jni-headers" depends="package">
     <mkdir dir="${build.native}"/>
     <javah destdir="${build.native}" classpath="${build.vm.jar}">
-      <class name="org.jikesrvm.VM_DynamicLibrary"/>
-      <class name="org.jikesrvm.VM_Process"/>
+      <class name="org.jikesrvm.runtime.VM_DynamicLibrary"/>
+      <class name="org.jikesrvm.runtime.VM_Process"/>
     </javah>
   </target>
 
@@ -1171,7 +1176,7 @@ Check to make sure all required properties are specified. This includes properti
       <arg line="${rvm.c++.args}"/>
       <arg value="-o"/>
       <arg value="${build.base}/${rvmexec.dll}"/>
-      <arg value="${bl.dir}/org_jikesrvm_VM_0005fProcess.C"/>
+      <arg value="${bl.dir}/org_jikesrvm_runtime_VM_0005fProcess.c"/>
     </exec>
 
     <!-- create rvmdynlib shared library -->
@@ -1182,7 +1187,7 @@ Check to make sure all required properties are specified. This includes properti
       <arg value="${build.base}/${rvmdynlib.dll}"/>
       <arg value="-L${build.base}"/>
       <arg value="-lrvm"/>
-      <arg value="${bl.dir}/org_jikesrvm_VM_0005fDynamicLibrary.C"/>
+      <arg value="${bl.dir}/org_jikesrvm_runtime_VM_0005fDynamicLibrary.c"/>
     </exec>
 
     <exec executable="${c++.exe}" failonerror="true">
@@ -1212,7 +1217,7 @@ Check to make sure all required properties are specified. This includes properti
     <copy file="${basedir}/tools/bootImageRunner/rvm" todir="${dist.base}">
       <filterset>
         <filter token="PRELOAD" 
-                value="LD_PRELOAD=&quot;$$LD_PRELOAD $$RVM_DIR/${target.dll-prefix}syswrap${target.dll-ext}&quot;"/>
+                value="LD_PRELOAD=&quot;$$LD_PRELOAD $$RVM_HOME/${target.dll-prefix}syswrap${target.dll-ext}&quot;"/>
       </filterset>
     </copy>
     <chmod file="${dist.base}/rvm" perm="ugo+rx"/>

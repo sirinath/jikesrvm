@@ -35,33 +35,33 @@ public class VMSystemProperties {
    *
    */
   public static void preInit(Properties p) {
-    p.put("java.version", "1.5.0"); /* This is a lie, of course -- we don't 
-                                       really support all 1.5 features, such
+    p.put("java.version", "1.6.0"); /* This is a lie, of course -- we don't 
+                                       really support all 1.6 features, such
                                        as assertions.  However, it is a  
                                        necessary lie, since Eclipse 3.0
                                        explicitly tests java.version and
                                        insists upon at least 1.4.1 to run. */
     p.put("java.vendor", "Jikes RVM Project");
     p.put("java.vm.vendor", "Jikes RVM Project");
-    p.put("java.vendor.url", "http://jikesrvm.sourceforge.net");
+    p.put("java.vendor.url", "http://jikesrvm.org");
     
     p.put("java.specification.name", "Java Platform API Specification");
     p.put("java.specification.vendor", "Sun Microsystems Inc.");
-    p.put("java.specification.version", "1.5");
+    p.put("java.specification.version", "1.6");
 
     p.put("java.vm.specification.name", "Java Virtual Machine Specification");
     p.put("java.vm.specification.vendor", "Sun Microsystems Inc.");
     p.put("java.vm.specification.version", "1.0");
 
-    /* 49.0 brings us through Java version 1.5. */
-    p.put("java.class.version", "49.0"); 
+    /* 50.0 brings us through Java version 1.6. */
+    p.put("java.class.version", "50.0"); 
 
     p.put("file.separator", "/");
     p.put("path.separator", ":");
     p.put("line.separator", "\n");
         
     p.put("java.compiler", "JikesRVM");
-    p.put("java.vm.version", "1.5.0");
+    p.put("java.vm.version", "1.6.0");
     p.put("java.vm.name", "JikesRVM");
     p.put("file.encoding", "8859_1");
     p.put("java.io.tmpdir", "/tmp");
@@ -120,8 +120,6 @@ public class VMSystemProperties {
     } else {
       VM.sysWrite("Jikes RVM: Warning: You have explicitly set java.ext.dirs; that will not do anything under Jikes RVM");
     }
-    
-    s = (s == null ) ? "" : s;
     p.put("java.ext.dirs", s);
     
 
@@ -140,7 +138,7 @@ public class VMSystemProperties {
      * this just in case later revisions of GNU Classpath start to require
      * some of them in the boot process; otherwise, we could wait for them to
      * be set in VM_CommandLineArgs.lateProcessCommandLineArguments() */
-    final String[] clProps = new String[] {"os.name", "os.arch", "os.version", "user.name", "user.home", "user.dir", "gnu.classpath.vm.shortname", "gnu.classpath.home.url", "java.home", "rvm.root", "rvm.build"};
+    final String[] clProps = new String[] {"os.name", "os.arch", "os.version", "user.name", "user.home", "user.dir", "gnu.classpath.vm.shortname", "gnu.classpath.home.url", "java.home"};
 
     for (final String prop : clProps) {
       s = VM_CommandLineArgs.getEnvironmentArg(prop);
@@ -159,7 +157,7 @@ public class VMSystemProperties {
    */
   private static void insertLibraryPath(Properties p) {
     String jlp = VM_CommandLineArgs.getEnvironmentArg("java.library.path");
-    String snp = VM_CommandLineArgs.getEnvironmentArg("rvm.build");
+    String snp = VM_CommandLineArgs.getEnvironmentArg("java.home");
     if (jlp == null) jlp = ".";
     p.put("java.library.path", snp + p.get("path.separator") +jlp);
   }
@@ -175,7 +173,6 @@ public class VMSystemProperties {
    * user.name, user.home, user.dir
    * gnu.classpath.vm.shortname, gnu.classpath.home.url, 
    * java.home,
-   * rvm.root, rvm.build
    *
    * We can look at them here via VM_CommandLineArgs.getEnvironmentArg().
    *
@@ -189,9 +186,5 @@ public class VMSystemProperties {
    * is already handling this OK.
    */
   public static void postInit(Properties properties) {
-    
   }
-
-  
-
 }

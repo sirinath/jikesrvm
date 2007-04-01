@@ -8,8 +8,8 @@
  */
 package java.lang.reflect;
 
-import org.jikesrvm.VM_ObjectModel;
-import org.jikesrvm.VM_Runtime;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
+import org.jikesrvm.runtime.VM_Runtime;
 import org.jikesrvm.classloader.*;
 
 /**

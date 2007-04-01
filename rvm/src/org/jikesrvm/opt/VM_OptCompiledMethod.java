@@ -11,6 +11,13 @@ package org.jikesrvm.opt;
 
 import org.jikesrvm.*;
 import org.jikesrvm.ArchitectureSpecific;
+import org.jikesrvm.runtime.VM_StackBrowser;
+import org.jikesrvm.runtime.VM_DynamicLink;
+import org.jikesrvm.runtime.VM_ExceptionDeliverer;
+import org.jikesrvm.runtime.VM_Magic;
+import org.jikesrvm.scheduler.VM_Scheduler;
+import org.jikesrvm.scheduler.VM_Processor;
+import org.jikesrvm.scheduler.VM_Thread;
 import org.jikesrvm.classloader.*;
 import org.jikesrvm.opt.ir.*;
 import org.jikesrvm.osr.*;
@@ -163,7 +170,7 @@ public final class VM_OptCompiledMethod extends VM_CompiledMethod {
    * @param out    The PrintStream to print the stack trace to.
    */
   @Interruptible
-  public void printStackTrace(Offset instructionOffset, PrintLN out) { 
+  public void printStackTrace(Offset instructionOffset, VM_PrintLN out) { 
     VM_OptMachineCodeMap map = getMCMap();
     int iei = map.getInlineEncodingForMCOffset(instructionOffset);
     if (iei >= 0) {
@@ -203,13 +210,9 @@ public final class VM_OptCompiledMethod extends VM_CompiledMethod {
     }
   }
 
-  private static final VM_TypeReference TYPE
-    = VM_TypeReference.findOrCreate(VM_BootstrapClassLoader.getBootstrapClassLoader(),
-                                    VM_Atom.findOrCreateAsciiAtom("Lorg/jikesrvm/VM_ExceptionTable;"));
-
   @Interruptible
   public int size() { 
-    int size = TYPE.peekResolvedType().asClass().getInstanceSize();
+    int size = VM_TypeReference.VM_ExceptionTable.peekResolvedType().asClass().getInstanceSize();
     size += _mcMap.size();
     if (eTable != null) size += VM_Array.IntArray.getInstanceSize(eTable.length);
     if (patchMap != null) size += VM_Array.IntArray.getInstanceSize(patchMap.length);
@@ -401,7 +404,7 @@ public final class VM_OptCompiledMethod extends VM_CompiledMethod {
    */
   @Interruptible
   public void createFinalMCMap (OPT_IR ir, int machineCodeLength) { 
-    _mcMap = new VM_OptMachineCodeMap(ir, machineCodeLength);
+    _mcMap = VM_OptMachineCodeMap.create(ir, machineCodeLength);
   }
 
   /**

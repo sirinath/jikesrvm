@@ -14,14 +14,15 @@ import org.jikesrvm.VM_BaselineCompiler;
 import org.jikesrvm.VM_BBConstants;
 import org.jikesrvm.VM_CompiledMethod;
 import org.jikesrvm.VM_EdgeCounts;
-import org.jikesrvm.VM_Entrypoints;
+import org.jikesrvm.runtime.VM_Entrypoints;
 import org.jikesrvm.VM_ForwardReference;
-import org.jikesrvm.VM_MagicNames;
-import org.jikesrvm.VM_Memory;
-import org.jikesrvm.VM_ObjectModel;
-import org.jikesrvm.VM_Statics;
-import org.jikesrvm.VM_Thread;
+import org.jikesrvm.runtime.VM_MagicNames;
+import org.jikesrvm.runtime.VM_Memory;
+import org.jikesrvm.objectmodel.VM_ObjectModel;
+import org.jikesrvm.runtime.VM_Statics;
+import org.jikesrvm.scheduler.VM_Thread;
 import org.jikesrvm.ArchitectureSpecific;
+import org.jikesrvm.adaptive.recompilation.VM_InvocationCounts;
 import org.jikesrvm.ppc.VM_Assembler;
 import org.jikesrvm.jni.ppc.VM_JNICompiler;
 import org.jikesrvm.memorymanagers.mminterface.MM_Constants;
@@ -3477,7 +3478,7 @@ public abstract class VM_Compiler extends VM_BaselineCompiler
 
       if (VM.BuildForAdaptiveSystem && options.INVOCATION_COUNTERS) {
         int id = compiledMethod.getId();
-        org.jikesrvm.adaptive.VM_InvocationCounts.allocateCounter(id);
+        VM_InvocationCounts.allocateCounter(id);
         asm.emitLAddrToc (T0, VM_Entrypoints.invocationCountsField.getOffset());
         asm.emitLVAL(T1, compiledMethod.getId() << LOG_BYTES_IN_INT);
         asm.emitLIntX   (T2, T0, T1);                       
