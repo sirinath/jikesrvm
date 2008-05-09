@@ -5,6 +5,12 @@ Jikes RVM NEWS -- History of significant changes
 This file contains the release notes since Jikes RVM 2.0.0, released
 on October 14, 2001,
 
+* Jikes RVM 2.9.4  (or 3.0...TBD) (Future)
+
+NOTE:  All future release notes will be generated directly from JIRA.
+If you want something mentioned in the release notes, make sure there is
+a JIRA item for it that has been marked as fixed for 2.9.3.
+
 *Jikes RVM 2.9.3 Release Notes (May 9, 2008)
 
 ** Sub-task
