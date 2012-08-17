@@ -37,6 +37,7 @@ public final class DynamicLibrary {
    */
   public static void boot() {
     System.loadLibrary("rvmdynlib");
+    dummy();
   }
 
   /**
@@ -143,7 +144,7 @@ public final class DynamicLibrary {
     // Run any JNI_OnLoad functions defined within the library
     if (!jniOnLoad.isZero()) {
       int version = runJNI_OnLoad(jniOnLoad);
-      checkJNIVersion(version);
+      //      checkJNIVersion(version);
     }
   }
 
@@ -157,6 +158,7 @@ public final class DynamicLibrary {
    * @return the JNI version returned by the JNI_OnLoad function
    */
   private static native int runJNI_OnLoad(Address JNI_OnLoadAddress);
+  private static native void dummy();
 
   /**
    * Check JNI version is &le; 1.4 and if not throw an
