@@ -1586,6 +1586,9 @@ public final class RVMThread extends ThreadContext implements Constants {
 
       initializeJNIEnv();
 
+      if (traceAcct)
+        VM.sysWriteln("Finishing initializeJniEnv() for the thread");
+
       if (VM.BuildForAdaptiveSystem) {
         onStackReplacementEvent = new OnStackReplacementEvent();
       } else {
