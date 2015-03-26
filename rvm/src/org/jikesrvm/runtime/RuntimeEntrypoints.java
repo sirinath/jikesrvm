@@ -84,7 +84,8 @@ import org.vmmagic.unboxed.Offset;
  */
 public class RuntimeEntrypoints implements ArchitectureSpecific.StackframeLayoutConstants {
 
-  private static final boolean traceAthrow = false;
+  //  private static final boolean traceAthrow = false;
+  private static final boolean traceAthrow = true;
   // Trap codes for communication with C trap handler.
   //
   public static final int TRAP_UNKNOWN = -1;
@@ -656,8 +657,8 @@ public class RuntimeEntrypoints implements ArchitectureSpecific.StackframeLayout
   @Unpreemptible("Deliver exception possibly from unpreemptible code")
   public static void athrow(Throwable exceptionObject) {
     if (traceAthrow) {
-      VM.sysWriteln("in athrow.");
-      RVMThread.dumpStack();
+      //      VM.sysWriteln("in athrow.");
+      //      RVMThread.dumpStack();
     }
     RVMThread myThread = RVMThread.getCurrentThread();
     Registers exceptionRegisters = myThread.getExceptionRegisters();
@@ -698,6 +699,8 @@ public class RuntimeEntrypoints implements ArchitectureSpecific.StackframeLayout
     if (false) VM.sysWriteln("it's in state = ",myThread.getExecStatus());
     Registers exceptionRegisters = myThread.getExceptionRegisters();
     if (false) VM.sysWriteln("we have exception registers = ",Magic.objectAsAddress(exceptionRegisters));
+
+    RVMThread.dumpStack();
 
     if ((trapCode == TRAP_STACK_OVERFLOW || trapCode == TRAP_JNI_STACK) &&
         myThread.getStack().length < (STACK_SIZE_MAX >> LOG_BYTES_IN_ADDRESS) &&
