@@ -19,11 +19,14 @@ import org.jikesrvm.classloader.RVMType;
 import org.jikesrvm.runtime.Magic;
 import org.jikesrvm.runtime.RuntimeEntrypoints;
 import org.jikesrvm.scheduler.Synchronization;
+import org.jikesrvm.runtime.Memory;
 import org.jikesrvm.scheduler.RVMThread;
 import org.vmmagic.pragma.Inline;
 import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Address;
 
 import static org.jikesrvm.mm.mminterface.Barriers.*;
+import org.jikesrvm.runtime.SysCall;
 
 /**
  * Our implementation of sun.misc.Unsafe maps the operations to
@@ -35,11 +38,9 @@ import static org.jikesrvm.mm.mminterface.Barriers.*;
  * where performance might matter.
  */
 public final class Unsafe {
-  private static final Unsafe unsafe = new Unsafe();
 
-  /** alias to match name that DL's FJ framework appears to expect from class libs */
-  @SuppressWarnings("unused")
-  private static final Unsafe theUnsafe = unsafe;
+  /** use name that Doug Lea's Fork-Join framework appears to expect from class libs */
+  private static final Unsafe theUnsafe = new Unsafe();
 
   private Unsafe() {}
 
@@ -48,7 +49,7 @@ public final class Unsafe {
     SecurityManager sm = System.getSecurityManager();
     if (sm != null)
       sm.checkPropertiesAccess();
-    return unsafe;
+    return theUnsafe;
   }
 
   @Inline
@@ -114,6 +115,62 @@ public final class Unsafe {
    }
 
   @Inline
+  public byte getByte(Object obj, int offset) {
+    Offset off = longToOffset(offset);
+    return Magic.getByteAtOffset(obj,off);
+  }
+
+  @Inline
+  public byte getByte(Object obj, long offset) {
+    Offset off = longToOffset(offset);
+    return Magic.getByteAtOffset(obj,off);
+  }
+
+  @Inline
+  public byte getByte(long address) {
+    return Address.fromLong(address).loadByte();
+  }
+
+  @Inline
+  public void putByte(long address, byte x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
+  public char getChar(long address) {
+    return Address.fromLong(address).loadChar();
+  }
+
+  @Inline
+  public void putChar(long address, char x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
+  public short getShort(long address) {
+    return Address.fromLong(address).loadShort();
+  }
+
+  @Inline
+  public void putShort(long address, short x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
+  public int getInt(Object obj,long offset) {
+    Offset off = longToOffset(offset);
+    return Magic.getIntAtOffset(obj,off);
+  }
+
+  @Inline
+  public int getIntVolatile(Object obj,long offset) {
+    Offset off = longToOffset(offset);
+    int result = Magic.getIntAtOffset(obj,off);
+    Magic.combinedLoadBarrier();
+    return result;
+  }
+
+  @Inline
   public void putIntVolatile(Object obj,long offset,int value) {
     Magic.storeStoreBarrier();
     Offset off = longToOffset(offset);
@@ -136,17 +193,28 @@ public final class Unsafe {
   }
 
   @Inline
-  public int getIntVolatile(Object obj,long offset) {
-    Offset off = longToOffset(offset);
-    int result = Magic.getIntAtOffset(obj,off);
-    Magic.combinedLoadBarrier();
-    return result;
+  public  int getInt(long address) {
+    return Address.fromLong(address).loadInt();
   }
 
   @Inline
-  public int getInt(Object obj,long offset) {
-    Offset off = longToOffset(offset);
-    return Magic.getIntAtOffset(obj,off);
+  public void putInt(long address, int x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
+  public long getLong(long address) {
+    return Address.fromLong(address).loadLong();
+  }
+
+  @Inline
+  public void putShort(long address, Long x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
+  public int pageSize(){
+    return Memory.getPagesize();
   }
 
   @Inline
@@ -172,6 +240,11 @@ public final class Unsafe {
   }
 
   @Inline
+  public void putLong(long address, long x) {
+    Address.fromLong(address).store(x);
+  }
+
+  @Inline
   public long getLongVolatile(Object obj,long offset) {
     Offset off = longToOffset(offset);
     long result = Magic.getLongAtOffset(obj,off);
@@ -183,6 +256,20 @@ public final class Unsafe {
   public long getLong(Object obj,long offset) {
     Offset off = longToOffset(offset);
     return Magic.getLongAtOffset(obj,off);
+  }
+
+  @Inline
+  public long allocateMemory(long bytes) {
+    Address result = SysCall.sysCall.sysMalloc((int)bytes);
+    if (result.isZero()) {
+      throw new OutOfMemoryError("Unable to satisfy malloc of "+bytes);
+    }
+    return result.toLong();
+  }
+
+  @Inline
+  public void freeMemory(long address) {
+    SysCall.sysCall.sysFree(Address.fromLong(address));
   }
 
   @Inline
@@ -208,6 +295,13 @@ public final class Unsafe {
   }
 
   @Inline
+  public Object getObject(Object obj, long offset) {
+    Offset off = longToOffset(offset);
+    Object result = Magic.getObjectAtOffset(obj,off);
+    return result;
+  }
+
+  @Inline
   public Object getObjectVolatile(Object obj,long offset) {
     Offset off = longToOffset(offset);
     Object result = Magic.getObjectAtOffset(obj,off);
@@ -217,7 +311,17 @@ public final class Unsafe {
 
   @Inline
   public int arrayBaseOffset(Class<?> arrayClass) {
+    // TODO should we get this via ObjectModel?
     return 0;
+  }
+
+  /**
+   * Ensure the given class has been initialized. This is often
+   * needed in conjunction with obtaining the static field base of a
+   * class.
+   */
+  public void ensureClassInitialized(Class<?> c){
+    // TODO implement
   }
 
   @Inline
@@ -248,6 +352,18 @@ public final class Unsafe {
 
   public void throwException(Throwable ex) {
     RuntimeEntrypoints.athrow(ex);
+  }
+
+  @Inline
+  public void setMemory(long address, long bytes, byte value) {
+    for (long i=0;i<bytes;i++){
+      Address.fromLong(address+i).store(value);
+    }
+  }
+
+  @Inline
+  public void copyMemory(long srcAddress, long destAddress, long bytes) {
+    Memory.memcopy(Address.fromLong(destAddress), Address.fromLong(srcAddress), (int)bytes);
   }
 
   @Inline
