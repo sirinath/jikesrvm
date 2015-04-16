@@ -54,6 +54,10 @@ EXTERNAL void sysDisableAlignmentChecking();
 EXTERNAL void sysReportAlignmentChecking();
 #endif
 
+EXTERNAL Word sysMonitorCreate();
+EXTERNAL void sysMonitorDestroy(Word);
+EXTERNAL void sysMonitorEnter(Word);
+EXTERNAL void sysMonitorExit(Word);
 
 #define ERROR_PRINTF(...) fprintf(SysErrorFile, __VA_ARGS__)
 
