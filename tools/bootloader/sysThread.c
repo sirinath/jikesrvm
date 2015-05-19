@@ -45,10 +45,6 @@ __attribute__ ((__noreturn__));
 #endif /* !__GLIBC__ */
 
 
-EXTERNAL Word sysMonitorCreate();
-EXTERNAL void sysMonitorDestroy(Word);
-EXTERNAL void sysMonitorEnter(Word);
-EXTERNAL void sysMonitorExit(Word);
 EXTERNAL void sysMonitorTimedWait(Word, long long);
 EXTERNAL void sysMonitorWait(Word);
 EXTERNAL void sysMonitorBroadcast(Word);
