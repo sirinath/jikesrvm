@@ -144,7 +144,16 @@ public class VM extends Properties {
     // has placed a pointer to the current RVMThread in a special
     // register.
     if (verboseBoot >= 1) VM.sysWriteln("Setting up current RVMThread");
-    ThreadLocalState.boot();
+
+    // TODO get thread local state working and/or
+    // use VM.BuildForOpenJDK when it's been introduced
+    if (VM.BuildForGnuClasspath || VM.BuildForHarmony) {
+      // This line was commented out for OpenJDK which led to a checkstyle
+      // failure because of an unused import. It is better to leave the line
+      // in. Removing and re-adding the import is error-prone as ThreadLocalState
+      // is using ArchitectureSpecific.
+      ThreadLocalState.boot();
+    }
 
     // Finish thread initialization that couldn't be done in boot image.
     // The "stackLimit" must be set before any interruptible methods are called
@@ -192,6 +201,16 @@ public class VM extends Properties {
     //
     if (verboseBoot >= 1) VM.sysWriteln("Initializing baseline compiler options to defaults");
     BaselineCompiler.initOptions();
+
+    // JNI Environment was moved to this place for OpenJDK.
+    // TODO document why it is necessary to initialize it this early.
+
+    // Create JNI Environment for boot thread.
+    // After this point the boot thread can invoke native methods.
+    org.jikesrvm.jni.JNIEnvironment.boot();
+    if (verboseBoot >= 1) VM.sysWriteln("Initializing JNI for boot thread");
+    RVMThread.getCurrentThread().initializeJNIEnv();
+    if (verboseBoot >= 1) VM.sysWriteln("JNI initialized for boot thread");
 
     // Fetch arguments from program command line.
     //
@@ -244,6 +263,24 @@ public class VM extends Properties {
     runClassInitializer("sun.misc.Unsafe");
 
     runClassInitializer("java.lang.Character");
+
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("java.lang.CharacterData");
+      runClassInitializer("java.lang.CharacterDataLatin1");
+      runClassInitializer("java.lang.CharacterData00");
+      runClassInitializer("java.lang.CharacterData01");
+      runClassInitializer("java.lang.CharacterData02");
+      runClassInitializer("java.lang.CharacterData0E");
+      runClassInitializer("java.lang.CharacterDataPrivateUse");
+      runClassInitializer("java.lang.CharacterDataUndefined");
+      runClassInitializer("java.lang.Throwable");
+      runClassInitializer("java.lang.Exception");
+      runClassInitializer("java.lang.ClassNotFoundException");
+      runClassInitializer("java.lang.RuntimeException");
+      runClassInitializer("java.lang.NullPointerException");
+      runClassInitializer("java.lang.Error");
+    }
+
     runClassInitializer("org.jikesrvm.classloader.TypeReferenceVector");
     runClassInitializer("org.jikesrvm.classloader.MethodVector");
     runClassInitializer("org.jikesrvm.classloader.FieldVector");
@@ -282,12 +319,22 @@ public class VM extends Properties {
     if (verboseBoot >= 1) VM.sysWriteln("Booting Lock");
     Lock.boot();
 
+    DynamicLibrary.boot();
+    if (VM.BuildForOpenJDK) {
+      System.loadLibrary("jikesrvm");
+      System.loadLibrary("jvm");
+      System.loadLibrary("java");
+      System.loadLibrary("zip");
+    }
+
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("java.lang.Thread");
+    }
+
     // Enable multiprocessing.
     // Among other things, after this returns, GC and dynamic class loading are enabled.
-    //
     if (verboseBoot >= 1) VM.sysWriteln("Booting scheduler");
     RVMThread.boot();
-    DynamicLibrary.boot();
 
     if (verboseBoot >= 1) VM.sysWriteln("Enabling GC");
     MemoryManager.enableCollection();
@@ -295,18 +342,17 @@ public class VM extends Properties {
     if (verboseBoot >= 1) VM.sysWriteln("Setting up boot thread");
     RVMThread.getCurrentThread().setupBootJavaThread();
 
-    // Create JNI Environment for boot thread.
-    // After this point the boot thread can invoke native methods.
-    org.jikesrvm.jni.JNIEnvironment.boot();
-    if (verboseBoot >= 1) VM.sysWriteln("Initializing JNI for boot thread");
-    RVMThread.getCurrentThread().initializeJNIEnv();
-    if (verboseBoot >= 1) VM.sysWriteln("JNI initialized for boot thread");
-
     if (VM.BuildForHarmony) {
       System.loadLibrary("hyluni");
       System.loadLibrary("hythr");
       System.loadLibrary("hyniochar");
     }
+
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("java.io.UnixFileSystem");
+      runClassInitializer("java.io.FileSystem");
+    }
+
     runClassInitializer("java.io.File"); // needed for when we initialize the
     // system/application class loader.
     runClassInitializer("java.lang.String");
@@ -314,11 +360,16 @@ public class VM extends Properties {
       runClassInitializer("gnu.java.security.provider.DefaultPolicy");
     }
     runClassInitializer("java.net.URL"); // needed for URLClassLoader
+
     /* Needed for ApplicationClassLoader, which in turn is needed by
        VMClassLoader.getSystemClassLoader()  */
-    if (VM.BuildForGnuClasspath) {
+    if (VM.BuildForGnuClasspath || VM.BuildForOpenJDK) {
       runClassInitializer("java.net.URLClassLoader");
     }
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("sun.misc.URLClassPath");
+    }
+
     /* Used if we start up Jikes RVM with the -jar argument; that argument
      * means that we need a working -jar before we can return an
      * Application Class Loader. */
@@ -329,7 +380,10 @@ public class VM extends Properties {
     }
     runClassInitializer("java.lang.Class$StaticData");
 
-    runClassInitializer("java.nio.charset.Charset");
+    if (VM.BuildForGnuClasspath || VM.BuildForHarmony) {
+      runClassInitializer("java.nio.charset.Charset");
+    }
+
     if (VM.BuildForGnuClasspath) {
       runClassInitializer("java.nio.charset.CharsetEncoder");
     }
@@ -341,13 +395,20 @@ public class VM extends Properties {
     runClassInitializer("java.io.PrintWriter"); // Uses System.getProperty
     System.setProperty("line.separator", "\n");
     runClassInitializer("java.io.PrintStream"); // Uses System.getProperty
-    runClassInitializer("java.util.Locale");
-    runClassInitializer("java.util.ResourceBundle");
+    if (VM.BuildForGnuClasspath || VM.BuildForHarmony) {
+      runClassInitializer("java.util.Locale");
+      runClassInitializer("java.util.ResourceBundle");
+    }
     runClassInitializer("java.util.zip.CRC32");
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("java.util.zip.ZipEntry");
+    }
     if (VM.BuildForHarmony) {
       System.loadLibrary("hyarchive");
     }
     runClassInitializer("java.util.zip.Inflater");
+
+
     if (VM.BuildForGnuClasspath) {
       runClassInitializer("java.util.zip.DeflaterHuffman");
       runClassInitializer("java.util.zip.InflaterDynHeader");
@@ -390,6 +451,9 @@ public class VM extends Properties {
       runClassInitializer("java.io.ObjectInputStream");
       runClassInitializer("java.security.MessageDigest");
     }
+    if (VM.BuildForOpenJDK) {
+      runClassInitializer("java.util.BitSet"); // needed when using IBM SDK as host JVM
+    }
     if (VM.BuildForGnuClasspath) {
       runClassInitializer("java.lang.VMDouble");
     }
@@ -401,6 +465,24 @@ public class VM extends Properties {
     if (VM.BuildForGnuClasspath) {
       runClassInitializer("gnu.java.nio.charset.EncodingHelper");
       runClassInitializer("java.lang.VMClassLoader");
+    }
+
+    if (VM.BuildForOpenJDK) {
+      //    runClassInitializer("java/lang/reflect/Modifier");
+      runClassInitializer("sun.reflect.Reflection");
+      runClassInitializer("java.util.concurrent.atomic.AtomicInteger");
+      runClassInitializer("java.util.concurrent.atomic.AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl");
+      runClassInitializer("java.io.FileInputStream");
+      runClassInitializer("java.io.FileOutputStream");
+      runClassInitializer("java.io.DataInputStream");
+      runClassInitializer("java.io.BufferedInputStream");
+
+      runClassInitializer("java.nio.CharBuffer");
+      runClassInitializer("java.nio.ByteBuffer");
+      runClassInitializer("java.nio.DirectByteBuffer");
+      runClassInitializer("java.nio.Bits");
+      runClassInitializer("sun.nio.cs.StreamEncoder");
+      runClassInitializer("java.util.StringTokenizer");
     }
 
     if (verboseBoot >= 1) VM.sysWriteln("initializing standard streams");
@@ -433,7 +515,7 @@ public class VM extends Properties {
       Entrypoints.luni4.setObjectValueUnchecked(null, null);
       Entrypoints.luni5.setObjectValueUnchecked(null, null);
       Entrypoints.luni6.setObjectValueUnchecked(null, null);
-      //runClassInitializer("java.lang.String$ConsolePrintStream");
+      runClassInitializer("java.lang.String$ConsolePrintStream");
       runClassInitializer("org.apache.harmony.luni.util.Msg");
       runClassInitializer("org.apache.harmony.archive.internal.nls.Messages");
       runClassInitializer("org.apache.harmony.luni.internal.nls.Messages");

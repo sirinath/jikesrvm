@@ -36,7 +36,7 @@ public final class DynamicLibrary {
    * Add symbol for the bootloader to find symbols within it.
    */
   public static void boot() {
-    System.loadLibrary("jvm_jni");
+    System.loadLibrary("jikesrvm_jni");
   }
 
   /**
@@ -120,7 +120,7 @@ public final class DynamicLibrary {
     // Run any JNI_OnLoad functions defined within the library
     if (!jniOnLoad.isZero()) {
       int version = runJNI_OnLoad(jniOnLoad);
-      checkJNIVersion(version);
+      //      checkJNIVersion(version);
     }
   }
 
