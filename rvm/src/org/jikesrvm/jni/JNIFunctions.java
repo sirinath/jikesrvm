@@ -30,7 +30,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
-
+//import java.security.PrivilegedAction;
 import org.jikesrvm.ArchitectureSpecific.JNIHelpers;
 import org.jikesrvm.Properties;
 import org.jikesrvm.VM;
@@ -53,6 +53,7 @@ import org.jikesrvm.runtime.Memory;
 import org.jikesrvm.runtime.Reflection;
 import org.jikesrvm.runtime.RuntimeEntrypoints;
 import org.jikesrvm.util.AddressInputStream;
+
 import org.vmmagic.pragma.NativeBridge;
 import org.vmmagic.unboxed.Address;
 import org.vmmagic.unboxed.AddressArray;
@@ -129,7 +130,7 @@ public class JNIFunctions {
   public static final boolean traceJNI = Properties.verboseJNI;
 
   // number of JNI function entries
-  public static final int FUNCTIONCOUNT = 232; // JNI 1.4
+  public static final int FUNCTIONCOUNT = 233; // JNI 1.4
 
   /**
    * GetVersion: the version of the JNI
@@ -6069,6 +6070,18 @@ public class JNIFunctions {
       env.recordException(unexpected);
       return -1;
     }
+  }
+
+  /*
+   *RVM native interfaces for Openjdk library
+   */
+
+  private static int RVM_DoPrivileged(JNIEnvironment env, int refClass, int refaction, int refcontext, Address iswarpException)
+  {
+    VM.sysWriteln("############RVM_Doprivileged is called");
+    //    PrivilegedAction action = (PrivilegedAction) env.getJNIRef(refaction);
+    //    Object a = action.run();
+    return 0;
   }
 
   /*

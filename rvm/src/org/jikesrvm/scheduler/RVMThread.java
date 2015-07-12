@@ -1718,6 +1718,9 @@ public final class RVMThread extends ThreadContext {
 
       initializeJNIEnv();
 
+      if (traceAcct)
+        VM.sysWriteln("Finishing initializeJniEnv() for the thread");
+
       if (VM.BuildForAdaptiveSystem) {
         onStackReplacementEvent = new OnStackReplacementEvent();
       } else {

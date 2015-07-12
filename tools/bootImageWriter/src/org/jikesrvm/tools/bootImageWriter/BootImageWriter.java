@@ -39,6 +39,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -139,6 +140,8 @@ public class BootImageWriter extends BootImageWriterMessages {
    * The boot thread
    */
   private static RVMThread startupThread;
+
+    private static ArrayList Dummy;
 
   /**
    * How much talking while we work?
@@ -1027,11 +1030,14 @@ public class BootImageWriter extends BootImageWriterMessages {
           objCookie = Statics.getSlotContentsAsInt(jtocOff);
         else
           objCookie = (int) Statics.getSlotContentsAsLong(jtocOff);
+
         // if (verbose >= 3)
         // say("       jtoc[", String.valueOf(i), "] = ", String.valueOf(objCookie));
         Object jdkObject = BootImageMap.getObject(objCookie);
-        if (jdkObject == null)
+        if (jdkObject == null) {
+          System.out.println("Can not find objectid in BootImageMap " + jtocOff + " " + objCookie);
           continue;
+        }
 
         if (verbose >= 2) traceContext.push(jdkObject.getClass().getName(),
                                             getRvmStaticField(jtocOff) + "");
@@ -1494,8 +1500,10 @@ public class BootImageWriter extends BootImageWriterMessages {
           continue; // arrays and primitives have no static or instance fields
 
         Class<?> jdkType = getJdkType(rvmType);
-        if (jdkType == null)
+        if (jdkType == null) {
+          System.out.println("Rvm->JDK Null " + rvmType.toString());
           continue;  // won't need the field info
+        }
 
         Key key   = new Key(jdkType);
         fieldInfo = bootImageTypeFields.get(key);
@@ -1513,7 +1521,7 @@ public class BootImageWriter extends BootImageWriterMessages {
             if (fieldInfo != null) {
               break;
             } else {
-              if (verbose >= 1) say("making fieldinfo for " + jdkType);
+              if (verbose >= 1) say("making superclass fieldinfo for " + jdkType + " " + cls.getName());
               fieldInfo = new FieldInfo(cls, null);
               bootImageTypeFields.put(key, fieldInfo);
             }
@@ -1686,6 +1694,7 @@ public class BootImageWriter extends BootImageWriterMessages {
                   traceContext.traceFieldNotInHostJdk();
                   traceContext.pop();
                 }
+                System.out.println("We don't understand Class " + jdkType.getName() + " " + rvmFieldName);
                 Statics.setSlotContents(rvmFieldOffset, 0);
                 if (!VM.runningTool)
                   bootImage.countNulledReference();
@@ -1699,6 +1708,7 @@ public class BootImageWriter extends BootImageWriterMessages {
                 traceContext.traceFieldNotInHostJdk();
                 traceContext.pop();
               }
+              System.out.println("We don't understand jdkType " + rvmFieldType.toString() + " " + rvmFieldName);
               Statics.setSlotContents(rvmFieldOffset, 0);
               if (!VM.runningTool)
                 bootImage.countNulledReference();
@@ -1706,8 +1716,9 @@ public class BootImageWriter extends BootImageWriterMessages {
             }
             continue;
           }
-
+          //jdkFieldAcc != null now :)
           if (! Modifier.isStatic(jdkFieldAcc.getModifiers())) {
+            System.out.println("Modifier is not static " + jdkType.getName() + " " + rvmFieldName);
             if (verbose >= 2) traceContext.push(rvmFieldType.toString(),
                                                 jdkType.getName(), rvmFieldName);
             if (verbose >= 2) traceContext.traceFieldNotStaticInHostJdk();
@@ -1720,6 +1731,7 @@ public class BootImageWriter extends BootImageWriterMessages {
           }
 
           if (!equalTypes(jdkFieldAcc.getType().getName(), rvmFieldType)) {
+            System.out.println("Not same field between RVM and jdk " + jdkType.getName() + " " + rvmFieldName);
             if (verbose >= 2) traceContext.push(rvmFieldType.toString(),
                                                 jdkType.getName(), rvmFieldName);
             if (verbose >= 2) traceContext.traceFieldDifferentTypeInHostJdk();
@@ -1773,8 +1785,9 @@ public class BootImageWriter extends BootImageWriterMessages {
           } else {
             // field is reference type
             final Object o = jdkFieldAcc.get(null);
-            if (verbose >= 3)
-              say("       setting with ", Services.addressAsHexString(Magic.objectAsAddress(o)));
+            // if (verbose >= 3)
+            if (Magic.objectAsAddress(o).EQ(Address.fromIntZeroExtend(0)))
+              say("Asetting with " + "  " + jdkType.getName() + " " + rvmField.toString() + " " + rvmFieldOffset + " " + Services.addressAsHexString(Magic.objectAsAddress(o)));
             Statics.setSlotContents(rvmFieldOffset, o);
           }
         }
@@ -1976,6 +1989,7 @@ public class BootImageWriter extends BootImageWriterMessages {
       if (rvmType == null) {
         if (verbose >= 2) traverseObject(jdkObject);
         if (verbose >= 2) depth--;
+        System.out.println("Object Not Present " + jdkType.getName());
         return OBJECT_NOT_PRESENT; // object not part of bootimage
       }
 
@@ -2210,11 +2224,12 @@ public class BootImageWriter extends BootImageWriterMessages {
       } else {
         // field is reference type
         Object value = jdkFieldAcc.get(jdkObject);
+
         if (!allocOnly) {
-          Class<?> jdkClass = jdkFieldAcc.getDeclaringClass();
-          if (verbose >= 2) traceContext.push(value.getClass().getName(),
-              jdkClass.getName(),
-              jdkFieldAcc.getName());
+//           Class<?> jdkClass = jdkFieldAcc.getDeclaringClass();
+//           if (verbose >= 2) traceContext.push(value.getClass().getName(),
+//               jdkClass.getName(),
+//               jdkFieldAcc.getName());
           copyReferenceFieldToBootImage(rvmFieldAddress, value, jdkObject,
               !untracedField, !(untracedField || rvmField.isFinal()), rvmFieldName, rvmFieldType);
         }
@@ -2661,6 +2676,9 @@ public class BootImageWriter extends BootImageWriterMessages {
       } else {
         return false;
       }
+    } else if (classLibrary == "openjdk") {
+      System.out.println("Unknow field in " + rvmFieldName + " " + rvmFieldType + " " + rvmFieldOffset);
+      return false;
     } else {
       throw new Error("Unknown class library: \"" + classLibrary + "\"");
     }
@@ -2716,6 +2734,7 @@ public class BootImageWriter extends BootImageWriterMessages {
         if (verbose >= 2) traceContext.push(value.getClass().getName(),
                                             "java.lang.Class",
                                             fieldName);
+        System.out.println("##" + value.getClass().getName() + " java.lang.Class " + fieldName);
         Address imageAddress = BootImageMap.findOrCreateEntry(value).imageAddress;
         if (imageAddress.EQ(OBJECT_NOT_PRESENT)) {
           // object not part of bootimage: install null reference
@@ -3002,7 +3021,9 @@ public class BootImageWriter extends BootImageWriterMessages {
         return false;
       }
     } else {
-      throw new Error("Unknown class library: \"" + classLibrary + "\"");
+      // System.out.println("Unknow Instance "+jdkObject.toString()+ " " + rvmFieldName);
+      return false;
+      //      throw new Error("Unknown class library: \"" + classLibrary + "\"");
     }
   }
 
