@@ -148,8 +148,8 @@ struct JavaVM_;
 typedef  JNIEnv_ JNIEnv;
 typedef JavaVM_ JavaVM;
 #else
-typedef const struct JNINativeInterface_ *JNIEnv;
-typedef const struct JNIInvokeInterface_ *JavaVM;
+typedef const struct JNINativeInterface_ JNIEnv;
+typedef const struct JNIInvokeInterface_ JavaVM;
 #endif
 
 struct JNINativeInterface_ {
@@ -385,6 +385,9 @@ struct JNINativeInterface_ {
     jobject (PJNICALL NewDirectByteBuffer)(JNIEnv *env, void *address, jlong capacity);
     void * (PJNICALL GetDirectBufferAddress)(JNIEnv *env, jobject buf);
     jlong (PJNICALL GetDirectBufferCapacity)(JNIEnv *env, jobject buf);
+
+  ////openjdk_native_interface////
+  jobject (PJNICALL RVM_DoPrivileged)(JNIEnv *env, jclass cls, jobject action, jobject context, jboolean *wrapException);
 };
 struct JNIEnv_ {
     const struct JNINativeInterface_ *functions;
